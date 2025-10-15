@@ -6,9 +6,9 @@ import type {
   TrafficLogData,
   QueryLogsOptions,
   AccessDecisionType,
-  AccessTrafficOptions,
+  SentinelOptions,
 } from "../interfaces";
-import { ACCESS_TRAFFIC_OPTIONS } from "../interfaces";
+import { SENTINEL_OPTIONS } from "../interfaces";
 
 @Injectable()
 export class TrafficService {
@@ -33,8 +33,8 @@ export class TrafficService {
     private readonly trafficLogRepository: Repository<TrafficLog>,
     @InjectRepository(AccessEvent)
     private readonly accessEventRepository: Repository<AccessEvent>,
-    @Inject(ACCESS_TRAFFIC_OPTIONS)
-    private readonly options: AccessTrafficOptions
+    @Inject(SENTINEL_OPTIONS)
+    private readonly options: SentinelOptions
   ) {
     this.retentionDays = options.trafficRetentionDays || 90;
     this.startLogProcessor();

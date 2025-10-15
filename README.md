@@ -1,8 +1,8 @@
-# @rastaweb/access-traffic
+# @rastaweb/sentinel
 
 > 🔐 Production-ready NestJS library for service-to-service authentication, traffic management, and access control
 
-[![npm version](https://badge.fury.io/js/%40rastaweb%2Faccess-traffic.svg)](https://badge.fury.io/js/%40rastaweb%2Faccess-traffic)
+[![npm version](https://badge.fury.io/js/%40rastaweb%2Fsentinel.svg)](https://badge.fury.io/js/%40rastaweb%2Fsentinel)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 
@@ -11,7 +11,7 @@
 ### Installation
 
 ```bash
-npm install @rastaweb/access-traffic
+npm install @rastaweb/sentinel
 ```
 
 ### Peer Dependencies
@@ -25,12 +25,12 @@ npm install @nestjs/common @nestjs/core @nestjs/typeorm typeorm reflect-metadata
 ```typescript
 // app.module.ts
 import { Module } from "@nestjs/common";
-import { AccessTrafficModule } from "@rastaweb/access-traffic";
+import { SentinelModule } from "@rastaweb/sentinel";
 
 @Module({
   imports: [
-    AccessTrafficModule.register({
-      dbUrl: process.env.DATABASE_URL || "sqlite://./access-traffic.db",
+    SentinelModule.register({
+      dbUrl: process.env.DATABASE_URL || "sqlite://./sentinel.db",
       autoMigrate: true,
       enableLogs: true,
       globalPolicy: {
@@ -68,7 +68,7 @@ export class AppModule {}
 
 ```typescript
 import { Controller, Get } from "@nestjs/common";
-import { RequireApiKey } from "@rastaweb/access-traffic";
+import { RequireApiKey } from "@rastaweb/sentinel";
 
 @Controller("api")
 export class ApiController {
@@ -95,7 +95,7 @@ export class ApiController {
 
 ```typescript
 import { Controller, Get } from "@nestjs/common";
-import { AccessRule, AllowIps, DenyIps } from "@rastaweb/access-traffic";
+import { AccessRule, AllowIps, DenyIps } from "@rastaweb/sentinel";
 
 @Controller("secure")
 export class SecureController {
@@ -125,7 +125,7 @@ export class SecureController {
 ### 3. Advanced Access Rules
 
 ```typescript
-import { AccessRule } from "@rastaweb/access-traffic";
+import { AccessRule } from "@rastaweb/sentinel";
 
 @Controller("advanced")
 export class AdvancedController {
@@ -153,14 +153,14 @@ export class AdvancedController {
 ```typescript
 // client.service.ts
 import { Injectable } from "@nestjs/common";
-import { AccessTrafficClient } from "@rastaweb/access-traffic";
+import { SentinelClient } from "@rastaweb/sentinel";
 
 @Injectable()
 export class ApiClientService {
-  private client: AccessTrafficClient;
+  private client: SentinelClient;
 
   constructor() {
-    this.client = new AccessTrafficClient({
+    this.client = new SentinelClient({
       baseURL: "https://api.example.com",
       apiKey: process.env.API_KEY,
       timeout: 10000,
@@ -184,7 +184,7 @@ export class ApiClientService {
 ### Module Configuration
 
 ```typescript
-interface AccessTrafficOptions {
+interface SentinelOptions {
   dbUrl?: string; // Database connection URL
   autoMigrate?: boolean; // Auto-create tables (default: false)
   enableLogs?: boolean; // Enable request logging (default: true)
@@ -213,7 +213,7 @@ interface AccessTrafficOptions {
 ```typescript
 // SQLite (development)
 {
-  dbUrl: "sqlite://./access-traffic.db";
+  dbUrl: "sqlite://./sentinel.db";
 }
 
 // MySQL (production)
@@ -230,7 +230,7 @@ interface AccessTrafficOptions {
 ### Async Configuration
 
 ```typescript
-AccessTrafficModule.registerAsync({
+SentinelModule.registerAsync({
   useFactory: async (configService: ConfigService) => ({
     dbUrl: configService.get("DATABASE_URL"),
     enableLogs: configService.get("ENABLE_TRAFFIC_LOGS", true),
@@ -249,23 +249,23 @@ AccessTrafficModule.registerAsync({
 
 ```bash
 # Install globally for CLI access
-npm install -g @rastaweb/access-traffic
+npm install -g @rastaweb/sentinel
 
 # Initialize database
-access-traffic init-db --url sqlite://./security.db
+sentinel init-db --url sqlite://./security.db
 
 # Create API key
-access-traffic create-key \
+sentinel create-key \
   --owner-type service \
   --owner-id payment-service \
   --name "Payment Service Key" \
   --scopes read,write,admin
 
 # List keys
-access-traffic list-keys --owner-type service
+sentinel list-keys --owner-type service
 
 # Revoke key
-access-traffic revoke-key --key-id abc123def456
+sentinel revoke-key --key-id abc123def456
 ```
 
 ### Programmatic Management
@@ -273,7 +273,7 @@ access-traffic revoke-key --key-id abc123def456
 ```typescript
 // api-key-manager.service.ts
 import { Injectable } from "@nestjs/common";
-import { ApiKeyService } from "@rastaweb/access-traffic";
+import { ApiKeyService } from "@rastaweb/sentinel";
 
 @Injectable()
 export class ApiKeyManagerService {
@@ -308,7 +308,7 @@ export class ApiKeyManagerService {
 ```typescript
 // analytics.service.ts
 import { Injectable } from "@nestjs/common";
-import { TrafficService } from "@rastaweb/access-traffic";
+import { TrafficService } from "@rastaweb/sentinel";
 
 @Injectable()
 export class AnalyticsService {
@@ -414,7 +414,7 @@ await serviceRepository.save({
 // microservice.module.ts
 @Module({
   imports: [
-    AccessTrafficModule.register({
+    SentinelModule.register({
       dbUrl: process.env.DATABASE_URL,
       enableLogs: true,
       globalPolicy: {
@@ -443,7 +443,7 @@ export class ServiceController {
 // partner-api.module.ts
 @Module({
   imports: [
-    AccessTrafficModule.register({
+    SentinelModule.register({
       dbUrl: process.env.DATABASE_URL,
       enableLogs: true,
       trafficRetentionDays: 365, // Longer retention for partner APIs
@@ -559,7 +559,7 @@ afterEach(() => {
 
 ```typescript
 // Enable detailed logging
-AccessTrafficModule.register({
+SentinelModule.register({
   enableLogs: true,
   // Add custom logger
   identifyUserFromRequest: async (req) => {
@@ -600,7 +600,7 @@ import {
   AccessRule,
   RequireApiKey,
   AllowIps,
-} from '@rastaweb/access-traffic';
+} from '@rastaweb/sentinel';
 
 @Controller('api')
 @UseGuards(AccessGuard)
@@ -643,7 +643,7 @@ export class ApiController {
 
 ```typescript
 import { Injectable } from "@nestjs/common";
-import { ApiKeyService, createClient } from "@rastaweb/access-traffic";
+import { ApiKeyService, createClient } from "@rastaweb/sentinel";
 
 @Injectable()
 export class MyService {
@@ -676,7 +676,7 @@ export class MyService {
 ## Configuration Options
 
 ```typescript
-interface AccessTrafficOptions {
+interface SentinelOptions {
   // Database
   dbUrl?: string; // Default: 'sqlite://:memory:'
   autoMigrate?: boolean; // Default: false
@@ -750,21 +750,21 @@ interface AccessTrafficOptions {
 ### Initialize Database
 
 ```bash
-npx access-traffic init-db --url sqlite://./mydb.db
+npx sentinel init-db --url sqlite://./mydb.db
 ```
 
 ### Create API Keys
 
 ```bash
 # Create service API key
-npx access-traffic create-key \
+npx sentinel create-key \
   --owner-type service \
   --owner-id my-service \
   --scopes read,write,admin \
   --name "My Service Key"
 
 # Create user API key with expiration
-npx access-traffic create-key \
+npx sentinel create-key \
   --owner-type user \
   --owner-id user123 \
   --scopes read \
@@ -775,16 +775,16 @@ npx access-traffic create-key \
 
 ```bash
 # List all keys
-npx access-traffic list-keys
+npx sentinel list-keys
 
 # List keys for specific owner
-npx access-traffic list-keys --owner-type service --owner-id my-service
+npx sentinel list-keys --owner-type service --owner-id my-service
 
 # Revoke a key
-npx access-traffic revoke-key --id <key-id>
+npx sentinel revoke-key --id <key-id>
 
 # View traffic statistics
-npx access-traffic stats --since "2024-01-01T00:00:00Z"
+npx sentinel stats --since "2024-01-01T00:00:00Z"
 ```
 
 ## Client SDK
@@ -792,7 +792,7 @@ npx access-traffic stats --since "2024-01-01T00:00:00Z"
 ### Basic Usage
 
 ```typescript
-import { createClient } from "@rastaweb/access-traffic";
+import { createClient } from "@rastaweb/sentinel";
 
 const client = createClient({
   baseURL: "https://api.example.com",
@@ -899,7 +899,7 @@ client.setDefaultHeader("x-version", "2.0");
 ### Traffic Service
 
 ```typescript
-import { TrafficService } from "@rastaweb/access-traffic";
+import { TrafficService } from "@rastaweb/sentinel";
 
 @Injectable()
 export class AnalyticsService {
@@ -931,7 +931,7 @@ DATABASE_URL=mysql://user:pass@localhost:3306/mydb
 # or
 DATABASE_URL=postgres://user:pass@localhost:5432/mydb
 # or
-DATABASE_URL=sqlite://./access-traffic.db
+DATABASE_URL=sqlite://./sentinel.db
 
 # API Configuration
 API_KEY_HEADER=x-api-key
@@ -984,7 +984,7 @@ If you're migrating from an existing authentication system:
 Enable detailed logging:
 
 ```typescript
-AccessTrafficModule.register({
+SentinelModule.register({
   enableLogs: true,
   // Add to TypeORM config for SQL logging
   logging: ["query", "error"],
@@ -1001,6 +1001,6 @@ MIT License - see LICENSE file for details.
 
 ## Support
 
-- 📚 [Documentation](https://github.com/your-org/access-traffic)
-- 🐛 [Issue Tracker](https://github.com/your-org/access-traffic/issues)
-- 💬 [Discussions](https://github.com/your-org/access-traffic/discussions)
+- 📚 [Documentation](https://github.com/your-org/sentinel)
+- 🐛 [Issue Tracker](https://github.com/your-org/sentinel/issues)
+- 💬 [Discussions](https://github.com/your-org/sentinel/discussions)

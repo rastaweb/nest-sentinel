@@ -12,9 +12,9 @@ import { ApiKeyService } from "../services/api-key.service";
 import { TrafficService } from "../services/traffic.service";
 import {
   AccessRuleOptions,
-  type AccessTrafficOptions,
+  type SentinelOptions,
   ACCESS_RULE_METADATA,
-  ACCESS_TRAFFIC_OPTIONS,
+  SENTINEL_OPTIONS,
   ClientInfo,
   AccessDecision,
   AccessContext,
@@ -42,8 +42,8 @@ export class AccessGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly apiKeyService: ApiKeyService,
     private readonly trafficService: TrafficService,
-    @Inject(ACCESS_TRAFFIC_OPTIONS)
-    private readonly options: AccessTrafficOptions
+    @Inject(SENTINEL_OPTIONS)
+    private readonly options: SentinelOptions
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

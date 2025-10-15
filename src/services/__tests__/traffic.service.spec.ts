@@ -7,7 +7,7 @@ import {
   TrafficLogData,
   QueryLogsOptions,
   AccessDecisionType,
-  ACCESS_TRAFFIC_OPTIONS,
+  SENTINEL_OPTIONS,
 } from "../../interfaces";
 
 describe("TrafficService", () => {
@@ -44,7 +44,7 @@ describe("TrafficService", () => {
           useValue: mockAccessRepository,
         },
         {
-          provide: ACCESS_TRAFFIC_OPTIONS,
+          provide: SENTINEL_OPTIONS,
           useValue: {
             enableLogs: true,
             trafficRetentionDays: 90,

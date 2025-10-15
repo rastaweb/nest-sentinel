@@ -10,8 +10,8 @@ import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { Request, Response } from "express";
 import { TrafficService } from "../services/traffic.service";
-import type { AccessTrafficOptions, TrafficLogData } from "../interfaces";
-import { ACCESS_TRAFFIC_OPTIONS } from "../interfaces";
+import type { SentinelOptions, TrafficLogData } from "../interfaces";
+import { SENTINEL_OPTIONS } from "../interfaces";
 import { parseClientIp } from "../utils/network.util";
 
 @Injectable()
@@ -20,8 +20,8 @@ export class TrackTrafficInterceptor implements NestInterceptor {
 
   constructor(
     private readonly trafficService: TrafficService,
-    @Inject(ACCESS_TRAFFIC_OPTIONS)
-    private readonly options: AccessTrafficOptions
+    @Inject(SENTINEL_OPTIONS)
+    private readonly options: SentinelOptions
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
