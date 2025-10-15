@@ -588,7 +588,6 @@ MIT © [Rastaweb](https://github.com/rastaweb)
 })
 export class AppModule {}
 
-````
 
 ### 2. Using Guards and Decorators
 
@@ -637,7 +636,6 @@ export class ApiController {
     return { message: 'Highly restricted data' };
   }
 }
-````
 
 ### 3. Service-to-Service Communication
 
