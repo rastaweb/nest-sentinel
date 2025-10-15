@@ -1,12 +1,12 @@
+![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
+
 # @rastaweb/nest-sentinel
 
 > 🔐 Production-ready NestJS library for service-to-service authentication, traffic management, and access control
 
-![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
 [![npm version](https://badge.fury.io/js/%40rastaweb%2Fnest-sentinel.svg)](https://www.npmjs.com/package/@rastaweb/nest-sentinel)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
-![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
 
 ## 🚀 Quick Start
 
@@ -592,56 +592,56 @@ export class AppModule {}
 
 ### 2. Using Guards and Decorators
 
-````typescript
-import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
+```typescript
+import { Controller, Get, UseGuards, UseInterceptors } from "@nestjs/common";
 import {
   AccessGuard,
   TrackTrafficInterceptor,
   AccessRule,
   RequireApiKey,
   AllowIps,
-} from '@rastaweb/nest-sentinel';
+} from "@rastaweb/nest-sentinel";
 
-@Controller('api')
+@Controller("api")
 @UseGuards(AccessGuard)
 @UseInterceptors(TrackTrafficInterceptor)
 export class ApiController {
-  @Get('public')
-  @AllowIps(['192.168.1.0/24', '10.0.0.0/8'])
+  @Get("public")
+  @AllowIps(["192.168.1.0/24", "10.0.0.0/8"])
   getPublicData() {
-    return { message: 'Public data accessible from allowed IPs' };
+    return { message: "Public data accessible from allowed IPs" };
   }
 
-  @Get('private')
-  @RequireApiKey(['read', 'admin'])
+  @Get("private")
+  @RequireApiKey(["read", "admin"])
   getPrivateData() {
-    return { message: 'Private data - API key required' };
+    return { message: "Private data - API key required" };
   }
 
-  @Get('restricted')
+  @Get("restricted")
   @AccessRule({
     require: {
       apiKey: true,
-      scopes: ['admin'],
-      combined: ['ip', 'mac', 'apiKey'], // All must be present
+      scopes: ["admin"],
+      combined: ["ip", "mac", "apiKey"], // All must be present
     },
     allow: [
-      { allOf: ['192.168.1.0/24', 'MAC:00-14-22-01-23-45'] }, // IP AND MAC
-      { anyOf: ['10.0.0.0/8', '::1'] }, // IP OR localhost
+      { allOf: ["192.168.1.0/24", "MAC:00-14-22-01-23-45"] }, // IP AND MAC
+      { anyOf: ["10.0.0.0/8", "::1"] }, // IP OR localhost
     ],
-    deny: ['192.168.1.100'], // Explicit deny
-    ipVersion: 'ipv4',
-    note: 'High security endpoint',
+    deny: ["192.168.1.100"], // Explicit deny
+    ipVersion: "ipv4",
+    note: "High security endpoint",
   })
   getRestrictedData() {
-    return { message: 'Highly restricted data' };
+    return { message: "Highly restricted data" };
   }
 }
-````
+```
 
 ### 3. Service-to-Service Communication
 
-```typescript
+````typescript
 import { Injectable } from "@nestjs/common";
 import { ApiKeyService, createClient } from "@rastaweb/nest-sentinel";
 
@@ -704,7 +704,7 @@ interface SentinelOptions {
     serviceId?: string;
   }>;
 }
-```
+````
 
 ## Access Rules
 
