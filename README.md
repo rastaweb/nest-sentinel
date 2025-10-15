@@ -6,6 +6,7 @@
 [![npm version](https://badge.fury.io/js/%40rastaweb%2Fnest-sentinel.svg)](https://www.npmjs.com/package/@rastaweb/nest-sentinel)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
+![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
 
 ## 🚀 Quick Start
 
