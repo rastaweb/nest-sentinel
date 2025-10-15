@@ -708,4 +708,4 @@ The library is designed with future scalability in mind:
 
 ---
 
-_This documentation reflects the current state of @rastaweb/sentinel v1.0.0. For the most up-to-date information, please refer to the repository and test files._
+_This documentation reflects the current state of @rastaweb/sentinel v1.0.2. For the most up-to-date information, please refer to the repository and test files._
