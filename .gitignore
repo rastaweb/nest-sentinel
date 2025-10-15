@@ -1,0 +1,80 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+build/
+out/
+
+# Coverage and testing
+coverage/
+*.lcov
+.nyc_output
+
+# Environment variables
+.env
+.env.test
+.env.production
+.env.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+test.db
+development.db
+dev.db
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Yarn Integrity file
+.yarn-integrity
+
+# API key files (for development)
+*.key
+api-keys.json
+
+# Temporary folders
+tmp/
+temp/
+
+# Local development files
+.local/
+local/
