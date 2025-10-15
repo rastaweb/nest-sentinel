@@ -669,7 +669,6 @@ export class MyService {
     return response.data;
   }
 }
-````
 
 ## Configuration Options
 
