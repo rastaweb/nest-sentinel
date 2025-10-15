@@ -1,8 +1,9 @@
-# @rastaweb/sentinel
+# @rastaweb/nest-sentinel
 
 > 🔐 Production-ready NestJS library for service-to-service authentication, traffic management, and access control
 
-[![npm version](https://badge.fury.io/js/%40rastaweb%2Fsentinel.svg)](https://badge.fury.io/js/%40rastaweb%2Fsentinel)
+![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
+[![npm version](https://badge.fury.io/js/%40rastaweb%2Fnest-sentinel.svg)](https://www.npmjs.com/package/@rastaweb/nest-sentinel)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 ![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
@@ -12,7 +13,7 @@
 ### Installation
 
 ```bash
-npm install @rastaweb/sentinel
+npm install @rastaweb/nest-sentinel
 ```
 
 ### Peer Dependencies
@@ -26,7 +27,7 @@ npm install @nestjs/common @nestjs/core @nestjs/typeorm typeorm reflect-metadata
 ```typescript
 // app.module.ts
 import { Module } from "@nestjs/common";
-import { SentinelModule } from "@rastaweb/sentinel";
+import { SentinelModule } from "@rastaweb/nest-sentinel";
 
 @Module({
   imports: [
@@ -69,7 +70,7 @@ export class AppModule {}
 
 ```typescript
 import { Controller, Get } from "@nestjs/common";
-import { RequireApiKey } from "@rastaweb/sentinel";
+import { RequireApiKey } from "@rastaweb/nest-sentinel";
 
 @Controller("api")
 export class ApiController {
@@ -96,7 +97,7 @@ export class ApiController {
 
 ```typescript
 import { Controller, Get } from "@nestjs/common";
-import { AccessRule, AllowIps, DenyIps } from "@rastaweb/sentinel";
+import { AccessRule, AllowIps, DenyIps } from "@rastaweb/nest-sentinel";
 
 @Controller("secure")
 export class SecureController {
@@ -126,7 +127,7 @@ export class SecureController {
 ### 3. Advanced Access Rules
 
 ```typescript
-import { AccessRule } from "@rastaweb/sentinel";
+import { AccessRule } from "@rastaweb/nest-sentinel";
 
 @Controller("advanced")
 export class AdvancedController {
@@ -154,7 +155,7 @@ export class AdvancedController {
 ```typescript
 // client.service.ts
 import { Injectable } from "@nestjs/common";
-import { SentinelClient } from "@rastaweb/sentinel";
+import { SentinelClient } from "@rastaweb/nest-sentinel";
 
 @Injectable()
 export class ApiClientService {
@@ -250,7 +251,7 @@ SentinelModule.registerAsync({
 
 ```bash
 # Install globally for CLI access
-npm install -g @rastaweb/sentinel
+npm install -g @rastaweb/nest-sentinel
 
 # Initialize database
 sentinel init-db --url sqlite://./security.db
@@ -274,7 +275,7 @@ sentinel revoke-key --key-id abc123def456
 ```typescript
 // api-key-manager.service.ts
 import { Injectable } from "@nestjs/common";
-import { ApiKeyService } from "@rastaweb/sentinel";
+import { ApiKeyService } from "@rastaweb/nest-sentinel";
 
 @Injectable()
 export class ApiKeyManagerService {
@@ -309,7 +310,7 @@ export class ApiKeyManagerService {
 ```typescript
 // analytics.service.ts
 import { Injectable } from "@nestjs/common";
-import { TrafficService } from "@rastaweb/sentinel";
+import { TrafficService } from "@rastaweb/nest-sentinel";
 
 @Injectable()
 export class AnalyticsService {
@@ -591,7 +592,7 @@ export class AppModule {}
 
 ### 2. Using Guards and Decorators
 
-```typescript
+````typescript
 import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   AccessGuard,
@@ -599,7 +600,7 @@ import {
   AccessRule,
   RequireApiKey,
   AllowIps,
-} from '@rastaweb/sentinel';
+} from '@rastaweb/nest-sentinel';
 
 @Controller('api')
 @UseGuards(AccessGuard)
@@ -636,12 +637,13 @@ export class ApiController {
     return { message: 'Highly restricted data' };
   }
 }
+````
 
 ### 3. Service-to-Service Communication
 
 ```typescript
 import { Injectable } from "@nestjs/common";
-import { ApiKeyService, createClient } from "@rastaweb/sentinel";
+import { ApiKeyService, createClient } from "@rastaweb/nest-sentinel";
 
 @Injectable()
 export class MyService {
@@ -789,7 +791,7 @@ npx sentinel stats --since "2024-01-01T00:00:00Z"
 ### Basic Usage
 
 ```typescript
-import { createClient } from "@rastaweb/sentinel";
+import { createClient } from "@rastaweb/nest-sentinel";
 
 const client = createClient({
   baseURL: "https://api.example.com",
@@ -896,7 +898,7 @@ client.setDefaultHeader("x-version", "2.0");
 ### Traffic Service
 
 ```typescript
-import { TrafficService } from "@rastaweb/sentinel";
+import { TrafficService } from "@rastaweb/nest-sentinel";
 
 @Injectable()
 export class AnalyticsService {
@@ -1001,3 +1003,4 @@ MIT License - see LICENSE file for details.
 - 📚 [Documentation](https://github.com/your-org/sentinel)
 - 🐛 [Issue Tracker](https://github.com/your-org/sentinel/issues)
 - 💬 [Discussions](https://github.com/your-org/sentinel/discussions)
+
