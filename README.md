@@ -591,7 +591,7 @@ export class AppModule {}
 
 ### 2. Using Guards and Decorators
 
-````typescript
+```typescript
 import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   AccessGuard,
