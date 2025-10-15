@@ -50,7 +50,7 @@ export class AppModule {}
 - 🔐 **API Key Authentication** - Secure service-to-service communication
 - 🛡️ **IP/MAC Access Control** - CIDR-based network security
 - 📊 **Traffic Monitoring** - Request logging and analytics
-- 🗄️ **Multi-Database Support** - SQLite, MySQL, PostgreSQL
+- �️ **Multi-Database Support** - SQLite, MySQL, PostgreSQL
 - 🔧 **CLI Management** - Easy API key and database management
 - 📱 **HTTP Client SDK** - Ready-to-use client with retries
 
@@ -588,7 +588,6 @@ MIT © [Rastaweb](https://github.com/rastaweb)
 })
 export class AppModule {}
 
-````
 
 ### 2. Using Guards and Decorators
 
@@ -637,7 +636,6 @@ export class ApiController {
     return { message: 'Highly restricted data' };
   }
 }
-````
 
 ### 3. Service-to-Service Communication
 
