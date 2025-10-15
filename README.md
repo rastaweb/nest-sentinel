@@ -636,7 +636,6 @@ export class ApiController {
     return { message: 'Highly restricted data' };
   }
 }
-````
 
 ### 3. Service-to-Service Communication
 
