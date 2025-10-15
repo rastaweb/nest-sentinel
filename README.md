@@ -2,10 +2,10 @@
 
 > 🔐 Production-ready NestJS library for service-to-service authentication, traffic management, and access control
 
+![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
 [![npm version](https://badge.fury.io/js/%40rastaweb%2Fsentinel.svg)](https://badge.fury.io/js/%40rastaweb%2Fsentinel)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
-![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
 
 ## 🚀 Quick Start
 
@@ -591,7 +591,7 @@ export class AppModule {}
 
 ### 2. Using Guards and Decorators
 
-```typescript
+````typescript
 import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   AccessGuard,
@@ -702,7 +702,7 @@ interface SentinelOptions {
     serviceId?: string;
   }>;
 }
-```
+````
 
 ## Access Rules
 
