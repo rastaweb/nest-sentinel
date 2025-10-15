@@ -241,12 +241,12 @@ export class AdvancedController {
 
 ```typescript
 import { Controller, Get, UseGuards } from "@nestjs/common";
-import { 
+import {
   AccessGuard,
   RequireApiKey,
-  SkipSentinel,        // Skip access guard entirely
-  SkipTrafficLogging,  // Skip traffic logging only
-  SkipAllSentinel      // Skip all Sentinel features
+  SkipSentinel, // Skip access guard entirely
+  SkipTrafficLogging, // Skip traffic logging only
+  SkipAllSentinel, // Skip all Sentinel features
 } from "@rastaweb/nest-sentinel";
 
 @Controller("api")
@@ -260,19 +260,19 @@ export class FlexibleController {
 
   @Get("fast")
   @RequireApiKey(["read"])
-  @SkipTrafficLogging()  // Keep security, skip heavy logging
+  @SkipTrafficLogging() // Keep security, skip heavy logging
   fast() {
     return { message: "Protected but optimized for performance" };
   }
 
   @Get("public")
-  @SkipSentinel()  // Skip access control (like @SkipThrottle)
+  @SkipSentinel() // Skip access control (like @SkipThrottle)
   public() {
     return { message: "No access control applied" };
   }
 
   @Get("health")
-  @SkipAllSentinel()  // Skip everything for maximum performance
+  @SkipAllSentinel() // Skip everything for maximum performance
   health() {
     return { status: "ok" };
   }
