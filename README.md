@@ -24,15 +24,41 @@ npm install @nestjs/common @nestjs/core @nestjs/typeorm typeorm reflect-metadata
 
 ### Basic Setup
 
+> **⚠️ Breaking Changes in v1.1.0**: You must now import Sentinel entities into your main TypeORM configuration. See [Migration Guide](#-migration-guide-v11x) below.
+
 ```typescript
 // app.module.ts
 import { Module } from "@nestjs/common";
-import { SentinelModule } from "@rastaweb/nest-sentinel";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import {
+  SentinelModule,
+  ApiKey,
+  TrafficLog,
+  AccessEvent,
+} from "@rastaweb/nest-sentinel";
 
 @Module({
   imports: [
+    // Configure your main TypeORM connection
+    TypeOrmModule.forRoot({
+      type: "mysql", // or 'postgres', 'sqlite'
+      host: "localhost",
+      port: 3306,
+      username: "user",
+      password: "password",
+      database: "myapp",
+      entities: [
+        __dirname + "/**/*.entity{.ts,.js}",
+        // Import Sentinel entities (REQUIRED in v1.1.0+)
+        ApiKey,
+        TrafficLog,
+        AccessEvent,
+      ],
+      synchronize: true, // Only for development
+    }),
+
+    // Configure Sentinel (no dbUrl needed anymore)
     SentinelModule.register({
-      dbUrl: process.env.DATABASE_URL || "sqlite://./sentinel.db",
       autoMigrate: true,
       enableLogs: true,
       globalPolicy: {
@@ -45,16 +71,75 @@ import { SentinelModule } from "@rastaweb/nest-sentinel";
 export class AppModule {}
 ```
 
-## 🔧 Core Features
+## � Migration Guide (v1.1.x)
+
+### Breaking Changes
+
+Starting with v1.1.0, Sentinel no longer creates its own TypeORM connection. This fixes entity metadata conflicts and improves database compatibility.
+
+### Migrating from v1.0.x
+
+#### Before (v1.0.x)
+
+```typescript
+@Module({
+  imports: [
+    SentinelModule.register({
+      dbUrl: "mysql://user:pass@localhost:3306/db", // ❌ No longer needed
+      autoMigrate: true,
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+#### After (v1.1.x)
+
+```typescript
+import { ApiKey, TrafficLog, AccessEvent } from "@rastaweb/nest-sentinel";
+
+@Module({
+  imports: [
+    // 1. Configure your main TypeORM connection
+    TypeOrmModule.forRoot({
+      type: "mysql",
+      // ... your database config
+      entities: [
+        __dirname + "/**/*.entity{.ts,.js}",
+        ApiKey,
+        TrafficLog,
+        AccessEvent, // ✅ Add Sentinel entities
+      ],
+    }),
+
+    // 2. Configure Sentinel (remove dbUrl)
+    SentinelModule.register({
+      // dbUrl: "...", // ❌ Remove this
+      autoMigrate: true, // ✅ Keep other options
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Database Compatibility Improvements
+
+- ✅ **MySQL**: Fixed TEXT column indexing issues
+- ✅ **SQLite**: Replaced enum types with varchar for compatibility
+- ✅ **PostgreSQL**: Improved type compatibility
+- ✅ **All Databases**: Removed duplicate index conflicts
+
+## �🔧 Core Features
 
 ### ✅ What You Get
 
 - 🔐 **API Key Authentication** - Secure service-to-service communication
 - 🛡️ **IP/MAC Access Control** - CIDR-based network security
 - 📊 **Traffic Monitoring** - Request logging and analytics
-- �️ **Multi-Database Support** - SQLite, MySQL, PostgreSQL
+- 🗄️ **Multi-Database Support** - SQLite, MySQL, PostgreSQL (improved compatibility)
 - 🔧 **CLI Management** - Easy API key and database management
 - 📱 **HTTP Client SDK** - Ready-to-use client with retries
+- ⚡ **Production Ready** - Built for high-performance microservices
 
 ### 🎯 Perfect For
 
@@ -65,6 +150,8 @@ export class AppModule {}
 - Audit logging requirements
 
 ## 📖 Usage Examples
+
+> 💡 **Need advanced configuration?** See the [Complete Configuration Guide](./CONFIGURATION_EXAMPLES.md) for skip options, performance tuning, and granular control over all Sentinel features.
 
 ### 1. Protect Routes with API Keys
 
@@ -150,7 +237,49 @@ export class AdvancedController {
 }
 ```
 
-### 4. Using the HTTP Client
+### 4. Skip Controls (NEW in v1.1.0)
+
+```typescript
+import { Controller, Get, UseGuards } from "@nestjs/common";
+import { 
+  AccessGuard,
+  RequireApiKey,
+  SkipSentinel,        // Skip access guard entirely
+  SkipTrafficLogging,  // Skip traffic logging only
+  SkipAllSentinel      // Skip all Sentinel features
+} from "@rastaweb/nest-sentinel";
+
+@Controller("api")
+@UseGuards(AccessGuard)
+export class FlexibleController {
+  @Get("protected")
+  @RequireApiKey(["read"])
+  protected() {
+    return { message: "Full protection and logging" };
+  }
+
+  @Get("fast")
+  @RequireApiKey(["read"])
+  @SkipTrafficLogging()  // Keep security, skip heavy logging
+  fast() {
+    return { message: "Protected but optimized for performance" };
+  }
+
+  @Get("public")
+  @SkipSentinel()  // Skip access control (like @SkipThrottle)
+  public() {
+    return { message: "No access control applied" };
+  }
+
+  @Get("health")
+  @SkipAllSentinel()  // Skip everything for maximum performance
+  health() {
+    return { status: "ok" };
+  }
+}
+```
+
+### 5. Using the HTTP Client
 
 ```typescript
 // client.service.ts
@@ -187,7 +316,7 @@ export class ApiClientService {
 
 ```typescript
 interface SentinelOptions {
-  dbUrl?: string; // Database connection URL
+  // dbUrl?: string; // ❌ REMOVED in v1.1.0 - use main TypeORM config instead
   autoMigrate?: boolean; // Auto-create tables (default: false)
   enableLogs?: boolean; // Enable request logging (default: true)
   apiKeyHeader?: string; // API key header name (default: 'x-api-key')
@@ -232,17 +361,40 @@ interface SentinelOptions {
 ### Async Configuration
 
 ```typescript
-SentinelModule.registerAsync({
-  useFactory: async (configService: ConfigService) => ({
-    dbUrl: configService.get("DATABASE_URL"),
-    enableLogs: configService.get("ENABLE_TRAFFIC_LOGS", true),
-    globalPolicy: {
-      ipWhitelist: configService.get("ALLOWED_IPS", "").split(","),
-      requireApiKey: configService.get("REQUIRE_API_KEY", false),
-    },
-  }),
-  inject: [ConfigService],
-});
+import { ApiKey, TrafficLog, AccessEvent } from "@rastaweb/nest-sentinel";
+
+@Module({
+  imports: [
+    // 1. Configure TypeORM first
+    TypeOrmModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        type: "mysql",
+        url: configService.get("DATABASE_URL"),
+        entities: [
+          __dirname + "/**/*.entity{.ts,.js}",
+          ApiKey,
+          TrafficLog,
+          AccessEvent,
+        ],
+        synchronize: configService.get("NODE_ENV") === "development",
+      }),
+      inject: [ConfigService],
+    }),
+
+    // 2. Configure Sentinel (no dbUrl needed)
+    SentinelModule.registerAsync({
+      useFactory: async (configService: ConfigService) => ({
+        enableLogs: configService.get("ENABLE_TRAFFIC_LOGS", true),
+        globalPolicy: {
+          ipWhitelist: configService.get("ALLOWED_IPS", "").split(","),
+          requireApiKey: configService.get("REQUIRE_API_KEY", false),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+})
+export class AppModule {}
 ```
 
 ## 🔑 API Key Management
@@ -677,7 +829,7 @@ export class MyService {
 ```typescript
 interface SentinelOptions {
   // Database
-  dbUrl?: string; // Default: 'sqlite://:memory:'
+  // dbUrl?: string; // ❌ REMOVED in v1.1.0 - use main TypeORM config
   autoMigrate?: boolean; // Default: false
 
   // Logging
@@ -1003,4 +1155,3 @@ MIT License - see LICENSE file for details.
 - 📚 [Documentation](https://github.com/your-org/sentinel)
 - 🐛 [Issue Tracker](https://github.com/your-org/sentinel/issues)
 - 💬 [Discussions](https://github.com/your-org/sentinel/discussions)
-

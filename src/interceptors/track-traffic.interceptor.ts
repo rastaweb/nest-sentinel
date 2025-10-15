@@ -6,12 +6,21 @@ import {
   Inject,
   Logger,
 } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { Request, Response } from "express";
 import { TrafficService } from "../services/traffic.service";
-import type { SentinelOptions, TrafficLogData } from "../interfaces";
-import { SENTINEL_OPTIONS } from "../interfaces";
+import type {
+  SentinelOptions,
+  TrafficLogData,
+  AccessRuleOptions,
+} from "../interfaces";
+import {
+  SENTINEL_OPTIONS,
+  SKIP_TRAFFIC_LOGGING,
+  ACCESS_RULE_METADATA,
+} from "../interfaces";
 import { parseClientIp } from "../utils/network.util";
 
 @Injectable()
@@ -19,13 +28,15 @@ export class TrackTrafficInterceptor implements NestInterceptor {
   private readonly logger = new Logger(TrackTrafficInterceptor.name);
 
   constructor(
+    private readonly reflector: Reflector,
     private readonly trafficService: TrafficService,
     @Inject(SENTINEL_OPTIONS)
     private readonly options: SentinelOptions
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    if (!this.options.enableLogs) {
+    // Check if traffic logging is disabled globally or for this route
+    if (this.shouldSkipTrafficLogging(context)) {
       return next.handle();
     }
 
@@ -197,5 +208,43 @@ export class TrackTrafficInterceptor implements NestInterceptor {
     });
 
     return sanitized;
+  }
+
+  /**
+   * Determine if traffic logging should be skipped for this request
+   * Follows Single Responsibility Principle - dedicated method for skip logic
+   */
+  private shouldSkipTrafficLogging(context: ExecutionContext): boolean {
+    // Check if logging is disabled globally
+    if (!this.options.enableLogs) {
+      return true;
+    }
+
+    // Check global skip configuration
+    if (this.options.skipTrafficLogging) {
+      return true;
+    }
+
+    // Check route-specific skip configuration via decorator
+    const shouldSkipViaDecorator = this.reflector.getAllAndOverride<boolean>(
+      SKIP_TRAFFIC_LOGGING,
+      [context.getHandler(), context.getClass()]
+    );
+
+    if (shouldSkipViaDecorator) {
+      return true;
+    }
+
+    // Check route-specific skip configuration via AccessRule
+    const accessRule = this.reflector.getAllAndOverride<AccessRuleOptions>(
+      ACCESS_RULE_METADATA,
+      [context.getHandler(), context.getClass()]
+    );
+
+    if (accessRule?.skipTrafficLogging) {
+      return true;
+    }
+
+    return false;
   }
 }

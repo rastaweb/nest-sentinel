@@ -17,6 +17,10 @@ export interface SentinelOptions {
   clientMacHeader?: string;
   trustProxy?: boolean;
   trafficRetentionDays?: number;
+  // Enhanced global configuration
+  skipGlobalGuards?: boolean; // Skip all guards globally
+  skipTrafficLogging?: boolean; // Skip traffic logging globally
+  skipAccessLogging?: boolean; // Skip access event logging globally
   serviceAuth?: {
     enabled: boolean;
     requiredScopes?: string[];
@@ -41,6 +45,10 @@ export interface AccessRuleOptions {
   };
   ipVersion?: "ipv4" | "ipv6" | "any";
   note?: string;
+  // Enhanced skip options for individual routes
+  skipGuard?: boolean; // Skip access guard for this route
+  skipTrafficLogging?: boolean; // Skip traffic logging for this route
+  skipAccessLogging?: boolean; // Skip access event logging for this route
 }
 
 export interface ApiKeyRecord {
@@ -108,6 +116,9 @@ export interface QueryLogsOptions {
 // Constants
 export const SENTINEL_OPTIONS = Symbol("SENTINEL_OPTIONS");
 export const ACCESS_RULE_METADATA = Symbol("ACCESS_RULE_METADATA");
+export const SKIP_SENTINEL_GUARD = Symbol("SKIP_SENTINEL_GUARD");
+export const SKIP_TRAFFIC_LOGGING = Symbol("SKIP_TRAFFIC_LOGGING");
+export const SKIP_ACCESS_LOGGING = Symbol("SKIP_ACCESS_LOGGING");
 
 // Default values
 export const DEFAULT_OPTIONS: Partial<SentinelOptions> = {
@@ -117,6 +128,9 @@ export const DEFAULT_OPTIONS: Partial<SentinelOptions> = {
   clientMacHeader: "x-client-mac",
   trustProxy: true,
   trafficRetentionDays: 90,
+  skipGlobalGuards: false,
+  skipTrafficLogging: false,
+  skipAccessLogging: false,
   serviceAuth: {
     enabled: true,
     requiredScopes: [],

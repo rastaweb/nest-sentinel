@@ -15,6 +15,8 @@ import {
   type SentinelOptions,
   ACCESS_RULE_METADATA,
   SENTINEL_OPTIONS,
+  SKIP_SENTINEL_GUARD,
+  SKIP_ACCESS_LOGGING,
   ClientInfo,
   AccessDecision,
   AccessContext,
@@ -49,11 +51,36 @@ export class AccessGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
 
+    // Check global skip configuration
+    if (this.options.skipGlobalGuards) {
+      this.logger.debug("Skipping Sentinel guard due to global configuration");
+      return true;
+    }
+
+    // Check route-specific skip configuration
+    const shouldSkipGuard = this.reflector.getAllAndOverride<boolean>(
+      SKIP_SENTINEL_GUARD,
+      [context.getHandler(), context.getClass()]
+    );
+
+    if (shouldSkipGuard) {
+      this.logger.debug("Skipping Sentinel guard for this route");
+      return true;
+    }
+
     // Get access rule from decorator metadata
     const accessRule = this.reflector.getAllAndOverride<AccessRuleOptions>(
       ACCESS_RULE_METADATA,
       [context.getHandler(), context.getClass()]
     );
+
+    // Check if this route specifically skips guards via AccessRule
+    if (accessRule?.skipGuard) {
+      this.logger.debug(
+        "Skipping Sentinel guard due to AccessRule configuration"
+      );
+      return true;
+    }
 
     // Parse client information
     const clientInfo = parseClientIp(request, this.options.trustProxy);
@@ -72,15 +99,23 @@ export class AccessGuard implements CanActivate {
         accessRule
       );
 
-      // Log the access decision
-      await this.trafficService.logAccessEvent(
-        decision.decision,
-        decision.reason,
-        clientInfo.ip,
-        clientMac,
-        request.accessContext?.apiKeyId,
-        decision.ruleMeta
+      // Check if we should skip access logging
+      const shouldSkipAccessLogging = this.shouldSkipAccessLogging(
+        context,
+        accessRule
       );
+
+      // Log the access decision (if not skipped)
+      if (!shouldSkipAccessLogging) {
+        await this.trafficService.logAccessEvent(
+          decision.decision,
+          decision.reason,
+          clientInfo.ip,
+          clientMac,
+          request.accessContext?.apiKeyId,
+          decision.ruleMeta
+        );
+      }
 
       if (decision.decision === "deny") {
         this.logger.warn(
@@ -359,5 +394,36 @@ export class AccessGuard implements CanActivate {
     const macHeader = this.options.clientMacHeader || "x-client-mac";
     const mac = request.headers[macHeader] as string;
     return mac ? normalizeMac(mac) : undefined;
+  }
+
+  /**
+   * Determine if access logging should be skipped for this request
+   * Follows Single Responsibility Principle - dedicated method for skip logic
+   */
+  private shouldSkipAccessLogging(
+    context: ExecutionContext,
+    accessRule?: AccessRuleOptions
+  ): boolean {
+    // Check global skip configuration
+    if (this.options.skipAccessLogging) {
+      return true;
+    }
+
+    // Check route-specific skip configuration via decorator
+    const shouldSkipViaDecorator = this.reflector.getAllAndOverride<boolean>(
+      SKIP_ACCESS_LOGGING,
+      [context.getHandler(), context.getClass()]
+    );
+
+    if (shouldSkipViaDecorator) {
+      return true;
+    }
+
+    // Check route-specific skip configuration via AccessRule
+    if (accessRule?.skipAccessLogging) {
+      return true;
+    }
+
+    return false;
   }
 }
