@@ -588,7 +588,6 @@ MIT © [Rastaweb](https://github.com/rastaweb)
 })
 export class AppModule {}
 
-````
 
 ### 2. Using Guards and Decorators
 
