@@ -1,5 +1,5 @@
 {
-  "name": "@rastaweb/sentinel",
+  "name": "@rastaweb/nest-sentinel",
   "version": "1.0.2",
   "description": "A production-ready NestJS library for service-to-service authentication, traffic management, and access control",
   "main": "dist/index.js",
