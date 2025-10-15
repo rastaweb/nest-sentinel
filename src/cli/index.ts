@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name("sentinel")
   .description("CLI for @rastaweb/nest-sentinel library")
-  .version("1.0.6");
+  .version("1.0.7");
 
 // Initialize database command
 program
