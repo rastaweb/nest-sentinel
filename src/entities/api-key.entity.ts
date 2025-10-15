@@ -18,14 +18,11 @@ export class ApiKey {
   @Column({ type: "varchar", length: 255 })
   name!: string;
 
-  @Column({ type: "text" })
+  @Column({ type: "varchar", length: 255 })
   @Index()
   key!: string;
 
-  @Column({
-    type: "enum",
-    enum: ["user", "service"],
-  })
+  @Column({ type: "varchar", length: 20 })
   ownerType!: OwnerType;
 
   @Column({ type: "varchar", length: 255 })
