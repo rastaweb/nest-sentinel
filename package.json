@@ -1,6 +1,6 @@
 {
   "name": "@rastaweb/nest-sentinel",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A production-ready NestJS library for service-to-service authentication, traffic management, and access control",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -60,7 +60,7 @@
     "axios": "^1.6.0",
     "bcrypt": "^5.1.1",
     "commander": "^11.1.0",
-    "ipaddr.js": "^2.0.1",
+    "ipaddr.js": "^2.2.0",
     "mysql2": "^3.6.5",
     "sqlite3": "^5.1.6",
     "uuid": "^9.0.1"
