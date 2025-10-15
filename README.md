@@ -50,7 +50,7 @@ export class AppModule {}
 - 🔐 **API Key Authentication** - Secure service-to-service communication
 - 🛡️ **IP/MAC Access Control** - CIDR-based network security
 - 📊 **Traffic Monitoring** - Request logging and analytics
-- �️ **Multi-Database Support** - SQLite, MySQL, PostgreSQL
+- 🗄️ **Multi-Database Support** - SQLite, MySQL, PostgreSQL
 - 🔧 **CLI Management** - Easy API key and database management
 - 📱 **HTTP Client SDK** - Ready-to-use client with retries
 
