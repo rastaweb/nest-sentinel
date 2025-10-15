@@ -1003,3 +1003,4 @@ MIT License - see LICENSE file for details.
 - 📚 [Documentation](https://github.com/your-org/sentinel)
 - 🐛 [Issue Tracker](https://github.com/your-org/sentinel/issues)
 - 💬 [Discussions](https://github.com/your-org/sentinel/discussions)
+
