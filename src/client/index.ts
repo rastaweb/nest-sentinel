@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 export interface ClientOptions {
   baseURL: string;
@@ -12,7 +12,7 @@ export interface ClientOptions {
 /**
  * HTTP client for accessing protected APIs
  */
-export class AccessTrafficClient {
+export class SentinelClient {
   private readonly axios: any;
   private apiKey?: string;
   private retries: number;
@@ -27,9 +27,9 @@ export class AccessTrafficClient {
       baseURL: options.baseURL,
       timeout: options.timeout || 10000,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
-        ...(this.apiKey && { 'x-api-key': this.apiKey }),
+        ...(this.apiKey && { "x-api-key": this.apiKey }),
       },
     });
 
@@ -40,9 +40,9 @@ export class AccessTrafficClient {
         return config;
       },
       (error: any) => {
-        console.error('❌ Request error:', error);
+        console.error("❌ Request error:", error);
         return Promise.reject(error);
-      },
+      }
     );
 
     // Add response interceptor for logging
@@ -53,10 +53,10 @@ export class AccessTrafficClient {
       },
       (error: any) => {
         console.error(
-          `❌ ${error.response?.status || 'Network'} ${error.config?.url}`,
+          `❌ ${error.response?.status || "Network"} ${error.config?.url}`
         );
         return Promise.reject(error);
-      },
+      }
     );
   }
 
@@ -65,9 +65,9 @@ export class AccessTrafficClient {
    */
   async get<T = any>(
     url: string,
-    options?: { headers?: Record<string, string> },
-  ): Promise<any> {
-    return this.request('GET', url, undefined, options);
+    options?: { headers?: Record<string, string> }
+  ): Promise<T> {
+    return this.request("GET", url, undefined, options);
   }
 
   /**
@@ -76,9 +76,9 @@ export class AccessTrafficClient {
   async post<T = any>(
     url: string,
     data?: any,
-    options?: { headers?: Record<string, string> },
-  ): Promise<any> {
-    return this.request('POST', url, data, options);
+    options?: { headers?: Record<string, string> }
+  ): Promise<T> {
+    return this.request("POST", url, data, options);
   }
 
   /**
@@ -87,9 +87,9 @@ export class AccessTrafficClient {
   async put<T = any>(
     url: string,
     data?: any,
-    options?: { headers?: Record<string, string> },
-  ): Promise<any> {
-    return this.request('PUT', url, data, options);
+    options?: { headers?: Record<string, string> }
+  ): Promise<T> {
+    return this.request("PUT", url, data, options);
   }
 
   /**
@@ -98,9 +98,9 @@ export class AccessTrafficClient {
   async patch<T = any>(
     url: string,
     data?: any,
-    options?: { headers?: Record<string, string> },
-  ): Promise<any> {
-    return this.request('PATCH', url, data, options);
+    options?: { headers?: Record<string, string> }
+  ): Promise<T> {
+    return this.request("PATCH", url, data, options);
   }
 
   /**
@@ -108,9 +108,9 @@ export class AccessTrafficClient {
    */
   async delete<T = any>(
     url: string,
-    options?: { headers?: Record<string, string> },
-  ): Promise<any> {
-    return this.request('DELETE', url, undefined, options);
+    options?: { headers?: Record<string, string> }
+  ): Promise<T> {
+    return this.request("DELETE", url, undefined, options);
   }
 
   /**
@@ -120,8 +120,8 @@ export class AccessTrafficClient {
     method: string,
     url: string,
     data?: any,
-    options?: { headers?: Record<string, string> },
-  ): Promise<any> {
+    options?: { headers?: Record<string, string> }
+  ): Promise<T> {
     const config: any = {
       method,
       url,
@@ -161,7 +161,7 @@ export class AccessTrafficClient {
    */
   updateApiKey(apiKey: string): void {
     this.apiKey = apiKey;
-    this.axios.defaults.headers['x-api-key'] = apiKey;
+    this.axios.defaults.headers["x-api-key"] = apiKey;
   }
 
   /**
@@ -189,8 +189,8 @@ export class AccessTrafficClient {
 /**
  * Create a new client instance
  */
-export function createClient(options: ClientOptions): AccessTrafficClient {
-  return new AccessTrafficClient(options);
+export function createClient(options: ClientOptions): SentinelClient {
+  return new SentinelClient(options);
 }
 
-export default AccessTrafficClient;
+export default SentinelClient;

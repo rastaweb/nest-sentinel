@@ -1,5 +1,5 @@
 // Main module
-export { AccessTrafficModule } from "./access-traffic.module";
+export { SentinelModule } from "./sentinel.module";
 
 // Entities
 export * from "./entities";
@@ -23,7 +23,7 @@ export * from "./utils/network.util";
 
 // Constants
 export {
-  ACCESS_TRAFFIC_OPTIONS,
+  SENTINEL_OPTIONS,
   ACCESS_RULE_METADATA,
   DEFAULT_OPTIONS,
 } from "./interfaces";

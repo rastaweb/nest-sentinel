@@ -1,5 +1,5 @@
-export type OwnerType = 'user' | 'service';
-export type AccessDecisionType = 'allow' | 'deny';
+export type OwnerType = "user" | "service";
+export type AccessDecisionType = "allow" | "deny";
 
 export interface AccessPolicy {
   ipWhitelist?: string[];
@@ -8,7 +8,7 @@ export interface AccessPolicy {
   deniedIps?: string[];
 }
 
-export interface AccessTrafficOptions {
+export interface SentinelOptions {
   dbUrl?: string;
   autoMigrate?: boolean;
   enableLogs?: boolean;
@@ -22,7 +22,7 @@ export interface AccessTrafficOptions {
     requiredScopes?: string[];
   };
   identifyUserFromRequest?: (
-    req: any,
+    req: any
   ) => Promise<{ userId?: string; serviceId?: string }>;
 }
 
@@ -37,9 +37,9 @@ export interface AccessRuleOptions {
   require?: {
     apiKey?: boolean;
     scopes?: string[];
-    combined?: Array<'ip' | 'mac' | 'apiKey' | 'ipVersion'>;
+    combined?: Array<"ip" | "mac" | "apiKey" | "ipVersion">;
   };
-  ipVersion?: 'ipv4' | 'ipv6' | 'any';
+  ipVersion?: "ipv4" | "ipv6" | "any";
   note?: string;
 }
 
@@ -71,12 +71,12 @@ export interface AccessContext {
 
 export interface ClientInfo {
   ip: string;
-  ipVersion: 'ipv4' | 'ipv6';
+  ipVersion: "ipv4" | "ipv6";
   mac?: string;
 }
 
 export interface AccessDecision {
-  decision: 'allow' | 'deny';
+  decision: "allow" | "deny";
   reason: string;
   ruleMeta?: Record<string, any>;
 }
@@ -87,7 +87,7 @@ export interface TrafficLogData {
   statusCode: number;
   durationMs: number;
   ip: string;
-  ipVersion: 'ipv4' | 'ipv6';
+  ipVersion: "ipv4" | "ipv6";
   clientMac?: string;
   apiKeyId?: string;
   serviceId?: string;
@@ -106,15 +106,15 @@ export interface QueryLogsOptions {
 }
 
 // Constants
-export const ACCESS_TRAFFIC_OPTIONS = Symbol('ACCESS_TRAFFIC_OPTIONS');
-export const ACCESS_RULE_METADATA = Symbol('ACCESS_RULE_METADATA');
+export const SENTINEL_OPTIONS = Symbol("SENTINEL_OPTIONS");
+export const ACCESS_RULE_METADATA = Symbol("ACCESS_RULE_METADATA");
 
 // Default values
-export const DEFAULT_OPTIONS: Partial<AccessTrafficOptions> = {
+export const DEFAULT_OPTIONS: Partial<SentinelOptions> = {
   autoMigrate: false,
   enableLogs: true,
-  apiKeyHeader: 'x-api-key',
-  clientMacHeader: 'x-client-mac',
+  apiKeyHeader: "x-api-key",
+  clientMacHeader: "x-client-mac",
   trustProxy: true,
   trafficRetentionDays: 90,
   serviceAuth: {

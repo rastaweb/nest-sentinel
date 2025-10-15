@@ -1,4 +1,4 @@
-# @rastaweb/access-traffic - Developer Documentation
+# @rastaweb/sentinel - Developer Documentation
 
 ## 📋 Table of Contents
 
@@ -18,7 +18,7 @@
 
 ### What it Solves
 
-`@rastaweb/access-traffic` is a production-ready NestJS library that provides comprehensive security and monitoring capabilities for microservice architectures. It solves critical problems in service-to-service communication:
+`@rastaweb/sentinel` is a production-ready NestJS library that provides comprehensive security and monitoring capabilities for microservice architectures. It solves critical problems in service-to-service communication:
 
 - **Authentication Gap**: Securing API endpoints between internal services
 - **Traffic Visibility**: Understanding request patterns and system usage
@@ -41,7 +41,7 @@ The library integrates seamlessly into any NestJS application as a **global modu
 ```typescript
 @Module({
   imports: [
-    AccessTrafficModule.register({
+    SentinelModule.register({
       dbUrl: "sqlite://./security.db",
       enableLogs: true,
       globalPolicy: {
@@ -153,16 +153,16 @@ adminEndpoint() {}
 
 ```bash
 # Initialize database
-access-traffic init-db --url sqlite://./db.sqlite
+sentinel init-db --url sqlite://./db.sqlite
 
 # Create API keys
-access-traffic create-key --owner-type service --owner-id payment-service
+sentinel create-key --owner-type service --owner-id payment-service
 
 # List keys
-access-traffic list-keys --owner-type service
+sentinel list-keys --owner-type service
 
 # Revoke keys
-access-traffic revoke-key --key-id abc123
+sentinel revoke-key --key-id abc123
 ```
 
 ### 6. HTTP Client SDK
@@ -184,12 +184,12 @@ access-traffic revoke-key --key-id abc123
 
 ```
 src/
-├── access-traffic.module.ts    # Main module with DI configuration
+├── sentinel.module.ts    # Main module with DI configuration
 ├── index.ts                    # Public API exports
 ├── cli/                        # Command-line tools
 │   └── index.ts               # CLI commands and database utilities
 ├── client/                     # HTTP client SDK
-│   └── index.ts               # AccessTrafficClient class
+│   └── index.ts               # SentinelClient class
 ├── decorators/                 # Access control decorators
 │   └── access-rule.decorator.ts
 ├── entities/                   # TypeORM database entities
@@ -312,7 +312,7 @@ The system uses an **asynchronous queue-based logging** approach:
 ### Module Configuration
 
 ```typescript
-interface AccessTrafficOptions {
+interface SentinelOptions {
   dbUrl?: string; // Database connection URL
   autoMigrate?: boolean; // Auto-create tables
   enableLogs?: boolean; // Enable request logging
@@ -405,7 +405,7 @@ class TrafficService {
 ### Client SDK
 
 ```typescript
-class AccessTrafficClient {
+class SentinelClient {
   constructor(options: ClientOptions);
 
   // HTTP methods with automatic retries
@@ -498,7 +498,7 @@ npm run test:cov
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd access-traffic
+cd sentinel
 
 # Install dependencies
 npm install
@@ -615,7 +615,7 @@ For development, use SQLite with the CLI:
 
 - **Implementation**: Dynamic module creation
 - **Benefits**: Configuration-based instantiation, async setup support
-- **Usage**: AccessTrafficModule.register() and registerAsync()
+- **Usage**: SentinelModule.register() and registerAsync()
 
 ---
 
@@ -661,7 +661,7 @@ interface CustomAccessRuleOptions extends AccessRuleOptions {
 
 ```typescript
 // Implement custom identification logic
-const options: AccessTrafficOptions = {
+const options: SentinelOptions = {
   identifyUserFromRequest: async (req) => {
     const jwtToken = req.headers.authorization;
     const decoded = jwt.verify(jwtToken, secret);
@@ -708,4 +708,4 @@ The library is designed with future scalability in mind:
 
 ---
 
-_This documentation reflects the current state of @rastaweb/access-traffic v1.0.0. For the most up-to-date information, please refer to the repository and test files._
+_This documentation reflects the current state of @rastaweb/sentinel v1.0.0. For the most up-to-date information, please refer to the repository and test files._
