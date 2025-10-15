@@ -39,10 +39,25 @@ The library operates as a **layered security system**:
 The library integrates seamlessly into any NestJS application as a **global module**:
 
 ```typescript
+import { ApiKey, TrafficLog, AccessEvent } from "@rastaweb/sentinel";
+
 @Module({
   imports: [
+    // Configure TypeORM with Sentinel entities
+    TypeOrmModule.forRoot({
+      type: "sqlite",
+      database: "./security.db",
+      entities: [
+        __dirname + "/**/*.entity{.ts,.js}",
+        ApiKey,
+        TrafficLog,
+        AccessEvent,
+      ],
+      synchronize: true,
+    }),
+
+    // Configure Sentinel
     SentinelModule.register({
-      dbUrl: "sqlite://./security.db",
       enableLogs: true,
       globalPolicy: {
         ipWhitelist: ["10.0.0.0/8"],
@@ -129,21 +144,25 @@ adminEndpoint() {}
 **Supported Databases**:
 
 - **SQLite**: Development and small deployments
-- **MySQL**: Production web applications
+- **MySQL**: Production web applications (improved compatibility v1.1.0+)
 - **PostgreSQL**: Enterprise applications with complex queries
 
-**Auto-Configuration**:
+**Configuration** (v1.1.0+):
 
 ```typescript
-// URL-based configuration
-{
-  dbUrl: "mysql://user:pass@host:3306/db";
-}
-{
-  dbUrl: "postgres://user:pass@host:5432/db";
-}
-{
-  dbUrl: "sqlite://./data.db";
+// Use your main TypeORM configuration
+TypeOrmModule.forRoot({
+  type: 'mysql',
+  host: 'localhost',
+  port: 3306,
+  username: 'user',
+  password: 'pass',
+  database: 'myapp',
+  entities: [
+    __dirname + '/**/*.entity{.ts,.js}',
+    ApiKey, TrafficLog, AccessEvent, // Add Sentinel entities
+  ],
+}),
 }
 ```
 
