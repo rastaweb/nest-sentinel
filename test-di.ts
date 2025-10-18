@@ -35,12 +35,12 @@ async function testDependencyInjection() {
 
     // Test that strategy can validate
     const result = await strategy.validate({
-      clientIP: '127.0.0.1',
+      clientIP: "127.0.0.1",
       headers: {},
       query: {},
-      routeOptions: { skip: true }
+      routeOptions: { skip: true },
     });
-    console.log('✅ Strategy validation works:', result);
+    console.log("✅ Strategy validation works:", result);
 
     await module.close();
     console.log("✅ Dependency injection test passed!");

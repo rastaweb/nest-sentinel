@@ -384,7 +384,9 @@ export class DenyAllStrategy extends SentinelStrategy {
 export class IPOnlyStrategy extends SentinelStrategy {
   readonly name = "ip-only";
 
-  constructor(private readonly store: SentinelStore) {
+  constructor(
+    @Inject(SENTINEL_STORE_TOKEN) private readonly store: SentinelStore
+  ) {
     super();
   }
 
