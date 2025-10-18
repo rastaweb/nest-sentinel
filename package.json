@@ -47,7 +47,9 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md"
   ],
   "peerDependencies": {
     "@nestjs/common": "^10.0.0 || ^11.0.0",

@@ -24,6 +24,12 @@ describe("Network Utils", () => {
       expect(matchIpOrRange("10.0.0.1", "10.0.0.0/8")).toBe(true);
     });
 
+    it("should match IPv6 CIDR ranges", () => {
+      expect(matchIpOrRange("2001:db8::1", "2001:db8::/32")).toBe(true);
+      expect(matchIpOrRange("2001:db9::1", "2001:db8::/32")).toBe(false);
+      expect(matchIpOrRange("fe80::1", "fe80::/10")).toBe(true);
+    });
+
     it("should handle invalid inputs gracefully", () => {
       expect(matchIpOrRange("invalid-ip", "192.168.1.0/24")).toBe(false);
       expect(matchIpOrRange("192.168.1.1", "invalid-range")).toBe(false);
@@ -35,10 +41,17 @@ describe("Network Utils", () => {
       expect(normalizeMac("00:14:22:01:23:45")).toBe("00-14-22-01-23-45");
       expect(normalizeMac("00.14.22.01.23.45")).toBe("00-14-22-01-23-45");
       expect(normalizeMac("MAC:00:14:22:01:23:45")).toBe("00-14-22-01-23-45");
+      expect(normalizeMac("001422012345")).toBe("00-14-22-01-23-45");
     });
 
     it("should handle empty input", () => {
       expect(normalizeMac("")).toBe("");
+    });
+
+    it("should handle invalid MAC addresses", () => {
+      expect(normalizeMac("invalid")).toBe("");
+      expect(normalizeMac("00:14:22")).toBe(""); // Too short
+      expect(normalizeMac("00:14:22:01:23:45:67")).toBe(""); // Too long
     });
   });
 

@@ -61,27 +61,46 @@ export function matchIpOrRange(value: string, pattern: string): boolean {
 
   try {
     if (pattern.includes("/")) {
-      // For CIDR matching, use a simple approach
-      // This is a simplified implementation
+      // For CIDR matching, use ipaddr.js for proper IPv4/IPv6 support
       const [rangeIp, prefixStr] = pattern.split("/");
       const prefix = parseInt(prefixStr, 10);
 
-      // Simple IPv4 CIDR matching
-      if (!value.includes(":") && !rangeIp.includes(":")) {
-        const valueNum = ipToNumber(value);
-        const rangeNum = ipToNumber(rangeIp);
-        const mask = (0xffffffff << (32 - prefix)) >>> 0;
-        return (valueNum & mask) === (rangeNum & mask);
+      // Use ipaddr.js for proper CIDR matching
+      const addr = ipaddr.process(value);
+      const range = ipaddr.process(rangeIp);
+
+      if (addr.kind() === range.kind()) {
+        if (addr.kind() === "ipv4") {
+          return addr.match(ipaddr.IPv4.parse(rangeIp), prefix);
+        } else {
+          return addr.match(ipaddr.IPv6.parse(rangeIp), prefix);
+        }
       }
 
-      // For IPv6 or complex cases, fall back to exact match
-      return value === rangeIp;
+      return false;
     } else {
       // Exact IP match
       return value === pattern;
     }
   } catch {
-    // Fallback to string comparison for invalid formats
+    // Fallback: Simple IPv4 CIDR matching for compatibility
+    if (
+      pattern.includes("/") &&
+      !value.includes(":") &&
+      !pattern.includes(":")
+    ) {
+      const [rangeIp, prefixStr] = pattern.split("/");
+      const prefix = parseInt(prefixStr, 10);
+
+      if (prefix >= 0 && prefix <= 32) {
+        const valueNum = ipToNumber(value);
+        const rangeNum = ipToNumber(rangeIp);
+        const mask = (0xffffffff << (32 - prefix)) >>> 0;
+        return (valueNum & mask) === (rangeNum & mask);
+      }
+    }
+
+    // Final fallback to string comparison
     return value === pattern;
   }
 }
@@ -103,13 +122,16 @@ export function normalizeMac(value: string): string {
   // Remove common prefixes
   const cleaned = value.replace(/^MAC:/i, "");
 
-  // Normalize separators to hyphens and convert to uppercase
-  return cleaned
-    .replace(/[:.]/g, "-")
-    .toUpperCase()
-    .replace(/([0-9A-F]{2})/g, "$1-")
-    .replace(/-$/, "")
-    .replace(/--/g, "-");
+  // Remove all separators and convert to uppercase
+  const hexOnly = cleaned.replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
+
+  // Ensure we have 12 hex characters
+  if (hexOnly.length !== 12) {
+    return "";
+  }
+
+  // Format as XX-XX-XX-XX-XX-XX
+  return hexOnly.replace(/(.{2})/g, "$1-").replace(/-$/, "");
 }
 
 /**
@@ -166,8 +188,19 @@ export function isValidIp(ip: string): boolean {
 export function isValidCidr(cidr: string): boolean {
   try {
     if (!cidr.includes("/")) return false;
-    ipaddr.process(cidr);
-    return true;
+
+    const [ip, prefixStr] = cidr.split("/");
+    const prefix = parseInt(prefixStr, 10);
+
+    // Validate IP part
+    const addr = ipaddr.process(ip);
+
+    // Validate prefix length
+    if (addr.kind() === "ipv4") {
+      return prefix >= 0 && prefix <= 32;
+    } else {
+      return prefix >= 0 && prefix <= 128;
+    }
   } catch {
     return false;
   }
