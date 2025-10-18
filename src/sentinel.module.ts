@@ -1,41 +1,37 @@
 import { DynamicModule, Module, Global } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { ApiKey, TrafficLog, AccessEvent } from "./entities";
-import { ApiKeyService } from "./services/api-key.service";
-import { TrafficService } from "./services/traffic.service";
+import { MemoryApiKeyService } from "./services/memory-api-key.service";
+import { MemoryLoggingService } from "./services/memory-logging.service";
 import { AccessGuard } from "./guards/access.guard";
 import { TrackTrafficInterceptor } from "./interceptors/track-traffic.interceptor";
-import {
-  SentinelOptions,
-  DEFAULT_OPTIONS,
-  SENTINEL_OPTIONS,
-} from "./interfaces";
+import type { SentinelOptions } from "./interfaces";
+import { DEFAULT_OPTIONS, SENTINEL_OPTIONS } from "./interfaces";
 
 @Global()
 @Module({})
 export class SentinelModule {
   static register(options: SentinelOptions = {}): DynamicModule {
+    // Validate configuration
+    if (options.apiKeyHeader && options.apiKeyHeader.trim() === "") {
+      throw new Error("apiKeyHeader cannot be empty");
+    }
+
     const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
 
     return {
       module: SentinelModule,
-      imports: [
-        // Only register entities with existing TypeORM connection
-        TypeOrmModule.forFeature([ApiKey, TrafficLog, AccessEvent]),
-      ],
       providers: [
         {
           provide: SENTINEL_OPTIONS,
           useValue: mergedOptions,
         },
-        ApiKeyService,
-        TrafficService,
+        MemoryApiKeyService,
+        MemoryLoggingService,
         AccessGuard,
         TrackTrafficInterceptor,
       ],
       exports: [
-        ApiKeyService,
-        TrafficService,
+        MemoryApiKeyService,
+        MemoryLoggingService,
         AccessGuard,
         TrackTrafficInterceptor,
         SENTINEL_OPTIONS,
@@ -44,7 +40,7 @@ export class SentinelModule {
     };
   }
   /**
-   * Register for async configuration
+   * Register for async configuration with validation
    */
   static registerAsync(options: {
     useFactory: (...args: any[]) => Promise<SentinelOptions> | SentinelOptions;
@@ -52,24 +48,29 @@ export class SentinelModule {
   }): DynamicModule {
     return {
       module: SentinelModule,
-      imports: [
-        // Only register entities with existing TypeORM connection
-        TypeOrmModule.forFeature([ApiKey, TrafficLog, AccessEvent]),
-      ],
       providers: [
         {
           provide: SENTINEL_OPTIONS,
-          useFactory: options.useFactory,
+          useFactory: async (...args: any[]) => {
+            const config = await options.useFactory(...args);
+
+            // Validate async configuration
+            if (config.apiKeyHeader && config.apiKeyHeader.trim() === "") {
+              throw new Error("apiKeyHeader cannot be empty");
+            }
+
+            return { ...DEFAULT_OPTIONS, ...config };
+          },
           inject: options.inject || [],
         },
-        ApiKeyService,
-        TrafficService,
+        MemoryApiKeyService,
+        MemoryLoggingService,
         AccessGuard,
         TrackTrafficInterceptor,
       ],
       exports: [
-        ApiKeyService,
-        TrafficService,
+        MemoryApiKeyService,
+        MemoryLoggingService,
         AccessGuard,
         TrackTrafficInterceptor,
         SENTINEL_OPTIONS,

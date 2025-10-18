@@ -82,3 +82,42 @@ export const IPv6Only = () =>
   AccessRule({
     ipVersion: "ipv6",
   });
+
+/**
+ * Decorator to allow specific MAC addresses
+ */
+export const AllowMacs = (macs: string[]) =>
+  AccessRule({
+    allow: macs.map((mac) => `MAC:${mac}`),
+  });
+
+/**
+ * Decorator to deny specific MAC addresses
+ */
+export const DenyMacs = (macs: string[]) =>
+  AccessRule({
+    deny: macs.map((mac) => `MAC:${mac}`),
+  });
+
+/**
+ * Decorator for complex access rules with AND logic
+ */
+export const RequireAll = (
+  requirements: Array<"ip" | "mac" | "apiKey" | "ipVersion">
+) =>
+  AccessRule({
+    require: {
+      combined: requirements,
+    },
+  });
+
+/**
+ * Decorator to enable rate limiting (future enhancement)
+ */
+export const RateLimit = (requests: number, windowMs: number) =>
+  AccessRule({
+    rateLimit: {
+      requests,
+      windowMs,
+    },
+  });

@@ -1,12 +1,9 @@
 // Main module
 export { SentinelModule } from "./sentinel.module";
 
-// Entities
-export * from "./entities";
-
 // Services
-export { ApiKeyService } from "./services/api-key.service";
-export { TrafficService } from "./services/traffic.service";
+export { MemoryApiKeyService } from "./services/memory-api-key.service";
+export { MemoryLoggingService } from "./services/memory-logging.service";
 
 // Guards and Interceptors
 export { AccessGuard } from "./guards/access.guard";
@@ -20,6 +17,9 @@ export * from "./interfaces";
 
 // Utilities
 export * from "./utils/network.util";
+
+// Client
+export { SentinelClient, createClient } from "./client";
 
 // Constants
 export {

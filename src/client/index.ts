@@ -7,6 +7,7 @@ export interface ClientOptions {
   retries?: number;
   retryDelay?: number;
   headers?: Record<string, string>;
+  enableLogging?: boolean; // Add logging control
 }
 
 /**
@@ -17,11 +18,13 @@ export class SentinelClient {
   private apiKey?: string;
   private retries: number;
   private retryDelay: number;
+  private enableLogging: boolean;
 
   constructor(options: ClientOptions) {
     this.apiKey = options.apiKey;
     this.retries = options.retries || 3;
     this.retryDelay = options.retryDelay || 1000;
+    this.enableLogging = options.enableLogging ?? false; // Default to false for less noise
 
     this.axios = axios.create({
       baseURL: options.baseURL,
@@ -36,11 +39,15 @@ export class SentinelClient {
     // Add request interceptor for logging
     this.axios.interceptors.request.use(
       (config: any) => {
-        console.debug(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
+        if (this.enableLogging) {
+          console.debug(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
+        }
         return config;
       },
       (error: any) => {
-        console.error("❌ Request error:", error);
+        if (this.enableLogging) {
+          console.error("❌ Request error:", error);
+        }
         return Promise.reject(error);
       }
     );
@@ -48,13 +55,17 @@ export class SentinelClient {
     // Add response interceptor for logging
     this.axios.interceptors.response.use(
       (response: any) => {
-        console.debug(`✅ ${response.status} ${response.config.url}`);
+        if (this.enableLogging) {
+          console.debug(`✅ ${response.status} ${response.config.url}`);
+        }
         return response;
       },
       (error: any) => {
-        console.error(
-          `❌ ${error.response?.status || "Network"} ${error.config?.url}`
-        );
+        if (this.enableLogging) {
+          console.error(
+            `❌ ${error.response?.status || "Network"} ${error.config?.url}`
+          );
+        }
         return Promise.reject(error);
       }
     );

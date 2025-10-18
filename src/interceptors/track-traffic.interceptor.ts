@@ -10,7 +10,7 @@ import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { Request, Response } from "express";
-import { TrafficService } from "../services/traffic.service";
+import { MemoryLoggingService } from "../services/memory-logging.service";
 import type {
   SentinelOptions,
   TrafficLogData,
@@ -29,7 +29,7 @@ export class TrackTrafficInterceptor implements NestInterceptor {
 
   constructor(
     private readonly reflector: Reflector,
-    private readonly trafficService: TrafficService,
+    private readonly loggingService: MemoryLoggingService,
     @Inject(SENTINEL_OPTIONS)
     private readonly options: SentinelOptions
   ) {}
@@ -151,8 +151,8 @@ export class TrackTrafficInterceptor implements NestInterceptor {
         routeName,
       };
 
-      // Queue the log for async processing
-      await this.trafficService.logRequest(logData);
+      // Log the traffic
+      await this.loggingService.logTraffic(logData);
     } catch (logError) {
       this.logger.error("Error logging traffic:", logError);
     }
@@ -215,16 +215,6 @@ export class TrackTrafficInterceptor implements NestInterceptor {
    * Follows Single Responsibility Principle - dedicated method for skip logic
    */
   private shouldSkipTrafficLogging(context: ExecutionContext): boolean {
-    // Check if logging is disabled globally
-    if (!this.options.enableLogs) {
-      return true;
-    }
-
-    // Check global skip configuration
-    if (this.options.skipTrafficLogging) {
-      return true;
-    }
-
     // Check route-specific skip configuration via decorator
     const shouldSkipViaDecorator = this.reflector.getAllAndOverride<boolean>(
       SKIP_TRAFFIC_LOGGING,

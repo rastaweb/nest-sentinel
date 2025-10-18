@@ -9,25 +9,34 @@ export interface AccessPolicy {
 }
 
 export interface SentinelOptions {
-  dbUrl?: string;
-  autoMigrate?: boolean;
-  enableLogs?: boolean;
+  /** Global access policy applied to all routes */
   globalPolicy?: AccessPolicy;
+  /** HTTP header name for API keys (default: 'x-api-key') */
   apiKeyHeader?: string;
+  /** HTTP header name for client MAC addresses (default: 'x-client-mac') */
   clientMacHeader?: string;
+  /** Trust proxy headers for IP detection (default: true) */
   trustProxy?: boolean;
-  trafficRetentionDays?: number;
-  // Enhanced global configuration
-  skipGlobalGuards?: boolean; // Skip all guards globally
-  skipTrafficLogging?: boolean; // Skip traffic logging globally
-  skipAccessLogging?: boolean; // Skip access event logging globally
+  /** Skip all guards globally - useful for development */
+  skipGlobalGuards?: boolean;
+  /** Service authentication configuration */
   serviceAuth?: {
     enabled: boolean;
     requiredScopes?: string[];
   };
+  /** Custom function to identify users/services from requests */
   identifyUserFromRequest?: (
     req: any
   ) => Promise<{ userId?: string; serviceId?: string }>;
+  /** Custom API key validator function */
+  validateApiKey?: (
+    key: string,
+    requiredScopes?: string[]
+  ) => Promise<ValidationResult>;
+  /** Custom access event logger */
+  onAccessEvent?: (event: AccessEventData) => Promise<void> | void;
+  /** Custom traffic logger */
+  onTrafficLog?: (logData: TrafficLogData) => Promise<void> | void;
 }
 
 export interface AddressMatch {
@@ -36,19 +45,35 @@ export interface AddressMatch {
 }
 
 export interface AccessRuleOptions {
+  /** IP/MAC addresses to allow access */
   allow?: Array<string | AddressMatch>;
+  /** IP/MAC addresses to deny access (takes precedence over allow) */
   deny?: Array<string | AddressMatch>;
+  /** Requirements that must be met for access */
   require?: {
+    /** Require a valid API key */
     apiKey?: boolean;
+    /** Required API key scopes */
     scopes?: string[];
+    /** Combined requirements (all must be true) */
     combined?: Array<"ip" | "mac" | "apiKey" | "ipVersion">;
   };
+  /** Required IP version (default: 'any') */
   ipVersion?: "ipv4" | "ipv6" | "any";
+  /** Human-readable description of this rule */
   note?: string;
-  // Enhanced skip options for individual routes
-  skipGuard?: boolean; // Skip access guard for this route
-  skipTrafficLogging?: boolean; // Skip traffic logging for this route
-  skipAccessLogging?: boolean; // Skip access event logging for this route
+  /** Skip access guard for this route */
+  skipGuard?: boolean;
+  /** Skip traffic logging for this route */
+  skipTrafficLogging?: boolean;
+  /** Skip access event logging for this route */
+  skipAccessLogging?: boolean;
+  /** Rate limiting configuration (future enhancement) */
+  rateLimit?: {
+    requests: number;
+    windowMs: number;
+    skipSuccessfulRequests?: boolean;
+  };
 }
 
 export interface ApiKeyRecord {
@@ -105,12 +130,55 @@ export interface TrafficLogData {
   routeName?: string;
 }
 
+export interface AccessEventData {
+  decision: "allow" | "deny";
+  reason: string;
+  ip: string;
+  clientMac?: string;
+  apiKeyId?: string;
+  ruleMeta?: Record<string, any>;
+  timestamp?: Date;
+}
+
 export interface QueryLogsOptions {
   ip?: string;
   apiKeyId?: string;
   since?: Date;
   limit?: number;
   route?: string;
+}
+
+/** Webhook configuration for security events */
+export interface WebhookConfig {
+  /** Webhook URL to send events to */
+  url: string;
+  /** Secret for webhook signature verification */
+  secret?: string;
+  /** Events to send (default: all) */
+  events?: Array<
+    "access_denied" | "key_created" | "key_rotated" | "suspicious_activity"
+  >;
+  /** Custom headers to include */
+  headers?: Record<string, string>;
+  /** Retry configuration */
+  retries?: {
+    count: number;
+    delay: number;
+  };
+}
+
+/** Statistics aggregation interface */
+export interface TrafficStats {
+  totalRequests: number;
+  uniqueIps: number;
+  averageResponseTime: number;
+  statusCodeDistribution: Record<number, number>;
+  topEndpoints: Array<{ path: string; count: number }>;
+  securityEvents: {
+    denied: number;
+    allowed: number;
+    suspiciousActivity: number;
+  };
 }
 
 // Constants
@@ -122,15 +190,10 @@ export const SKIP_ACCESS_LOGGING = Symbol("SKIP_ACCESS_LOGGING");
 
 // Default values
 export const DEFAULT_OPTIONS: Partial<SentinelOptions> = {
-  autoMigrate: false,
-  enableLogs: true,
   apiKeyHeader: "x-api-key",
   clientMacHeader: "x-client-mac",
   trustProxy: true,
-  trafficRetentionDays: 90,
   skipGlobalGuards: false,
-  skipTrafficLogging: false,
-  skipAccessLogging: false,
   serviceAuth: {
     enabled: true,
     requiredScopes: [],

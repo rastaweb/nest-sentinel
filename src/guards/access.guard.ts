@@ -8,8 +8,8 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Request } from "express";
-import { ApiKeyService } from "../services/api-key.service";
-import { TrafficService } from "../services/traffic.service";
+import { MemoryApiKeyService } from "../services/memory-api-key.service";
+import { MemoryLoggingService } from "../services/memory-logging.service";
 import {
   AccessRuleOptions,
   type SentinelOptions,
@@ -42,8 +42,8 @@ export class AccessGuard implements CanActivate {
 
   constructor(
     private readonly reflector: Reflector,
-    private readonly apiKeyService: ApiKeyService,
-    private readonly trafficService: TrafficService,
+    private readonly apiKeyService: MemoryApiKeyService,
+    private readonly loggingService: MemoryLoggingService,
     @Inject(SENTINEL_OPTIONS)
     private readonly options: SentinelOptions
   ) {}
@@ -107,7 +107,7 @@ export class AccessGuard implements CanActivate {
 
       // Log the access decision (if not skipped)
       if (!shouldSkipAccessLogging) {
-        await this.trafficService.logAccessEvent(
+        await this.loggingService.logAccessEvent(
           decision.decision,
           decision.reason,
           clientInfo.ip,
@@ -118,10 +118,14 @@ export class AccessGuard implements CanActivate {
       }
 
       if (decision.decision === "deny") {
-        this.logger.warn(
-          `Access denied for ${clientInfo.ip}: ${decision.reason}`
+        const detailedReason = this.buildDetailedErrorMessage(
+          decision,
+          clientInfo
         );
-        throw new ForbiddenException(decision.reason);
+        this.logger.warn(
+          `Access denied for ${clientInfo.ip}: ${detailedReason}`
+        );
+        throw new ForbiddenException(detailedReason);
       }
 
       this.logger.debug(
@@ -314,8 +318,8 @@ export class AccessGuard implements CanActivate {
     }
 
     // Check if any required scopes
-    const requiredScope = requirements.scopes?.[0]; // Use first scope for validation
-    const result = await this.apiKeyService.validateKey(apiKey, requiredScope);
+    const requiredScopes = requirements.scopes; // Pass all required scopes
+    const result = await this.apiKeyService.validateKey(apiKey, requiredScopes);
 
     if (result.valid && result.apiKeyRecord) {
       // Set access context
@@ -404,11 +408,6 @@ export class AccessGuard implements CanActivate {
     context: ExecutionContext,
     accessRule?: AccessRuleOptions
   ): boolean {
-    // Check global skip configuration
-    if (this.options.skipAccessLogging) {
-      return true;
-    }
-
     // Check route-specific skip configuration via decorator
     const shouldSkipViaDecorator = this.reflector.getAllAndOverride<boolean>(
       SKIP_ACCESS_LOGGING,
@@ -425,5 +424,34 @@ export class AccessGuard implements CanActivate {
     }
 
     return false;
+  }
+
+  /**
+   * Build detailed error message for better developer experience
+   */
+  private buildDetailedErrorMessage(
+    decision: AccessDecision,
+    clientInfo: ClientInfo
+  ): string {
+    const baseMessage = decision.reason;
+
+    if (decision.ruleMeta?.rule === "allow") {
+      return `${baseMessage}. Your IP ${clientInfo.ip} (${clientInfo.ipVersion}) is not in the allowed list.`;
+    }
+
+    if (decision.ruleMeta?.rule === "deny") {
+      return `${baseMessage}. Your IP ${clientInfo.ip} matches a deny rule: ${decision.ruleMeta.pattern}`;
+    }
+
+    if (decision.ruleMeta?.rule === "apiKey") {
+      return `${baseMessage}. Please provide a valid API key in the '${this.options.apiKeyHeader || "x-api-key"}' header.`;
+    }
+
+    if (decision.ruleMeta?.rule === "combined") {
+      const requirements = decision.ruleMeta.requirements as string[];
+      return `${baseMessage}. This endpoint requires: ${requirements.join(", ")}.`;
+    }
+
+    return baseMessage;
   }
 }
