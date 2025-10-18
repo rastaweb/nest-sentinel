@@ -1,29 +1,88 @@
-// Main module
-export { SentinelModule } from "./sentinel.module";
+/**
+ * @rastaweb/nest-sentinel
+ *
+ * A comprehensive NestJS library for endpoint-level access validation
+ * with IP and API key restrictions.
+ *
+ * @author rastaweb
+ * @version 1.0.0
+ */
 
-// Entities
-export * from "./entities";
+// Core interfaces and types
+export type {
+  SentinelConfig,
+  SentinelOptions,
+  ValidationContext,
+  ValidationResult,
+  SentinelStore,
+  SentinelAsyncOptions,
+  SentinelOptionsFactory,
+  IPValidationRule,
+  APIKeyValidationRule,
+  ValidationRule,
+} from "./interfaces";
 
-// Services
-export { ApiKeyService } from "./services/api-key.service";
-export { TrafficService } from "./services/traffic.service";
+// Export the abstract SentinelStrategy class
+export { SentinelStrategy } from "./interfaces";
 
-// Guards and Interceptors
-export { AccessGuard } from "./guards/access.guard";
-export { TrackTrafficInterceptor } from "./interceptors/track-traffic.interceptor";
-
-// Decorators
-export * from "./decorators/access-rule.decorator";
-
-// Interfaces and Types
-export * from "./interfaces";
-
-// Utilities
-export * from "./utils/network.util";
+// Export error classes
+export {
+  SentinelError,
+  IPValidationError,
+  APIKeyValidationError,
+} from "./interfaces";
 
 // Constants
+export * from "./constants";
+
+// Decorators - export everything except SentinelStrategy to avoid conflicts
 export {
-  SENTINEL_OPTIONS,
-  ACCESS_RULE_METADATA,
-  DEFAULT_OPTIONS,
-} from "./interfaces";
+  Sentinel,
+  SkipSentinel,
+  APIKeyOnly,
+  IPOnly,
+  PrivateNetworkOnly,
+  BlockIPs,
+  RequireBoth,
+  getSentinelOptions,
+  getSentinelStrategy,
+} from "./decorators";
+
+// Export the SentinelStrategy decorator separately to avoid naming conflicts
+export { SentinelStrategy as SentinelStrategyDecorator } from "./decorators";
+
+// Utilities
+export * from "./utils";
+
+// Strategies
+export * from "./strategies";
+
+// Guard
+export * from "./guard";
+
+// Module
+export * from "./module";
+
+// Re-export commonly used items for convenience
+
+export {
+  InMemorySentinelStore,
+  DefaultSentinelStrategy,
+  AllowAllStrategy,
+  DenyAllStrategy,
+  IPOnlyStrategy,
+  StrategyRegistry,
+} from "./strategies";
+
+export {
+  IPValidator,
+  APIKeyValidator,
+  validateEnvironment,
+  RequestUtils,
+} from "./utils";
+
+export {
+  createSentinelConfig,
+  createTestConfig,
+  createProductionConfig,
+} from "./module";
