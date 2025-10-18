@@ -1,6 +1,6 @@
 {
   "name": "@rastaweb/nest-sentinel",
-  "version": "1.0.0",
+  "version": "1.2.2",
   "description": "A comprehensive NestJS library for endpoint-level access validation with IP and API key restrictions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
