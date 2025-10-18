@@ -351,7 +351,7 @@ describe("AllowAllStrategy", () => {
       query: {},
     };
 
-    const result = strategy.validate(context);
+    const result = strategy.validate();
     expect(result.allowed).toBe(true);
     expect(result.metadata?.strategy).toBe("allow-all");
   });
@@ -371,7 +371,7 @@ describe("DenyAllStrategy", () => {
       query: {},
     };
 
-    const result = strategy.validate(context);
+    const result = strategy.validate();
     expect(result.allowed).toBe(false);
     expect(result.reason).toContain("deny-all");
   });
