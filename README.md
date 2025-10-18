@@ -1,3 +1,5 @@
+![Logo](https://avatars.githubusercontent.com/u/238212114?s=48&v=4)
+
 # @rastaweb/nest-sentinel
 
 A comprehensive NestJS library for endpoint-level access validation with IP and API key restrictions, providing flexible configuration at both global and route levels.
@@ -51,14 +53,14 @@ npm install @nestjs/common @nestjs/core reflect-metadata rxjs
 
 ```typescript
 // app.module.ts
-import { Module } from '@nestjs/common';
-import { SentinelModule } from '@rastaweb/nest-sentinel';
+import { Module } from "@nestjs/common";
+import { SentinelModule } from "@rastaweb/nest-sentinel";
 
 @Module({
   imports: [
     SentinelModule.forRoot({
       enabled: true,
-      defaultStrategy: 'default'
+      defaultStrategy: "default",
     }),
   ],
   controllers: [AppController],
@@ -70,22 +72,21 @@ export class AppModule {}
 
 ```typescript
 // app.controller.ts
-import { Controller, Get } from '@nestjs/common';
-import { Sentinel, IPOnly, APIKeyOnly } from '@rastaweb/nest-sentinel';
+import { Controller, Get } from "@nestjs/common";
+import { Sentinel, IPOnly, APIKeyOnly } from "@rastaweb/nest-sentinel";
 
 @Controller()
 export class AppController {
-  
-  @IPOnly(['192.168.0.0/24', '127.0.0.1'])
-  @Get('internal')
+  @IPOnly(["192.168.0.0/24", "127.0.0.1"])
+  @Get("internal")
   getInternalData() {
-    return { message: 'Internal data accessible only from allowed IPs' };
+    return { message: "Internal data accessible only from allowed IPs" };
   }
 
   @APIKeyOnly()
-  @Get('protected')
+  @Get("protected")
   getProtectedData() {
-    return { message: 'Protected data requiring API key' };
+    return { message: "Protected data requiring API key" };
   }
 }
 ```
@@ -95,30 +96,29 @@ export class AppController {
 ### IP-Based Protection
 
 ```typescript
-import { IPOnly, PrivateNetworkOnly, BlockIPs } from '@rastaweb/nest-sentinel';
+import { IPOnly, PrivateNetworkOnly, BlockIPs } from "@rastaweb/nest-sentinel";
 
-@Controller('api')
+@Controller("api")
 export class ApiController {
-  
   // Allow specific IP ranges
-  @IPOnly(['192.168.0.0/24', '10.0.0.0/8'])
-  @Get('internal')
+  @IPOnly(["192.168.0.0/24", "10.0.0.0/8"])
+  @Get("internal")
   getInternalAPI() {
-    return { data: 'Internal API' };
+    return { data: "Internal API" };
   }
 
   // Private networks only
   @PrivateNetworkOnly()
-  @Get('admin')
+  @Get("admin")
   getAdminPanel() {
     return { admin: true };
   }
 
   // Block specific IPs
-  @BlockIPs(['192.168.1.100', '10.0.0.50/32'])
-  @Get('public')
+  @BlockIPs(["192.168.1.100", "10.0.0.50/32"])
+  @Get("public")
   getPublicAPI() {
-    return { data: 'Public but some IPs blocked' };
+    return { data: "Public but some IPs blocked" };
   }
 }
 ```
@@ -126,33 +126,32 @@ export class ApiController {
 ### API Key Protection
 
 ```typescript
-import { APIKeyOnly, RequireBoth } from '@rastaweb/nest-sentinel';
+import { APIKeyOnly, RequireBoth } from "@rastaweb/nest-sentinel";
 
-@Controller('secure')
+@Controller("secure")
 export class SecureController {
-  
   // Require API key in default header (x-api-key)
   @APIKeyOnly()
-  @Get('data')
+  @Get("data")
   getSecureData() {
-    return { secure: 'data' };
+    return { secure: "data" };
   }
 
   // Custom header for API key
-  @APIKeyOnly({ header: 'authorization', required: true })
-  @Get('auth')
+  @APIKeyOnly({ header: "authorization", required: true })
+  @Get("auth")
   getAuthData() {
-    return { auth: 'data' };
+    return { auth: "data" };
   }
 
   // Require both IP and API key
   @RequireBoth({
-    allowedIPs: ['192.168.0.0/24'],
-    apiKeyHeader: 'x-api-key'
+    allowedIPs: ["192.168.0.0/24"],
+    apiKeyHeader: "x-api-key",
   })
-  @Get('ultra-secure')
+  @Get("ultra-secure")
   getUltraSecureData() {
-    return { ultra: 'secure' };
+    return { ultra: "secure" };
   }
 }
 ```
@@ -160,48 +159,47 @@ export class SecureController {
 ### Advanced Route Configuration
 
 ```typescript
-import { Sentinel } from '@rastaweb/nest-sentinel';
+import { Sentinel } from "@rastaweb/nest-sentinel";
 
-@Controller('advanced')
+@Controller("advanced")
 export class AdvancedController {
-  
   @Sentinel({
     ip: {
-      type: 'ip',
-      whitelist: ['192.168.0.0/24'],
-      blacklist: ['192.168.0.100'],
+      type: "ip",
+      whitelist: ["192.168.0.0/24"],
+      blacklist: ["192.168.0.100"],
       allowPrivate: true,
-      allowLoopback: true
+      allowLoopback: true,
     },
     apiKey: {
-      type: 'apiKey',
-      header: 'x-custom-key',
+      type: "apiKey",
+      header: "x-custom-key",
       required: true,
-      validateKey: true
-    }
+      validateKey: true,
+    },
   })
-  @Get('complex')
+  @Get("complex")
   getComplexValidation() {
-    return { message: 'Complex validation passed' };
+    return { message: "Complex validation passed" };
   }
 
   // Multiple validation rules
   @Sentinel({
     rules: [
       {
-        type: 'ip',
-        whitelist: ['10.0.0.0/8']
+        type: "ip",
+        whitelist: ["10.0.0.0/8"],
       },
       {
-        type: 'apiKey',
-        header: 'authorization',
-        required: true
-      }
-    ]
+        type: "apiKey",
+        header: "authorization",
+        required: true,
+      },
+    ],
   })
-  @Get('multi-rules')
+  @Get("multi-rules")
   getMultiRuleValidation() {
-    return { message: 'Multiple rules validated' };
+    return { message: "Multiple rules validated" };
   }
 }
 ```
@@ -212,8 +210,8 @@ export class AdvancedController {
 
 ```typescript
 // app.module.ts
-import { SentinelModule } from '@rastaweb/nest-sentinel';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SentinelModule } from "@rastaweb/nest-sentinel";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 
 @Module({
   imports: [
@@ -221,18 +219,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     SentinelModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        enabled: configService.get('SENTINEL_ENABLED', true),
-        defaultStrategy: configService.get('SENTINEL_STRATEGY', 'default'),
+        enabled: configService.get("SENTINEL_ENABLED", true),
+        defaultStrategy: configService.get("SENTINEL_STRATEGY", "default"),
         defaultIPRules: {
-          type: 'ip',
-          allowPrivate: configService.get('ALLOW_PRIVATE_IPS', true),
-          allowLoopback: configService.get('ALLOW_LOOPBACK', true)
+          type: "ip",
+          allowPrivate: configService.get("ALLOW_PRIVATE_IPS", true),
+          allowLoopback: configService.get("ALLOW_LOOPBACK", true),
         },
         defaultAPIKeyRules: {
-          type: 'apiKey',
-          required: configService.get('REQUIRE_API_KEY', false),
-          validateKey: true
-        }
+          type: "apiKey",
+          required: configService.get("REQUIRE_API_KEY", false),
+          validateKey: true,
+        },
       }),
       inject: [ConfigService],
     }),
@@ -244,22 +242,27 @@ export class AppModule {}
 ### Production Configuration
 
 ```typescript
-import { SentinelModule, createProductionConfig } from '@rastaweb/nest-sentinel';
+import {
+  SentinelModule,
+  createProductionConfig,
+} from "@rastaweb/nest-sentinel";
 
 @Module({
   imports: [
-    SentinelModule.forRoot(createProductionConfig({
-      defaultIPRules: {
-        type: 'ip',
-        allowPrivate: false, // Disable private IPs in production
-        allowLoopback: false // Disable loopback in production
-      },
-      defaultAPIKeyRules: {
-        type: 'apiKey',
-        required: true, // Require API keys in production
-        validateKey: true
-      }
-    })),
+    SentinelModule.forRoot(
+      createProductionConfig({
+        defaultIPRules: {
+          type: "ip",
+          allowPrivate: false, // Disable private IPs in production
+          allowLoopback: false, // Disable loopback in production
+        },
+        defaultAPIKeyRules: {
+          type: "apiKey",
+          required: true, // Require API keys in production
+          validateKey: true,
+        },
+      })
+    ),
   ],
 })
 export class AppModule {}
@@ -373,12 +376,16 @@ getPremiumAccess() {
 Create custom validation logic by extending `SentinelStrategy`:
 
 ```typescript
-import { Injectable } from '@nestjs/common';
-import { SentinelStrategy, ValidationContext, ValidationResult } from '@rastaweb/nest-sentinel';
+import { Injectable } from "@nestjs/common";
+import {
+  SentinelStrategy,
+  ValidationContext,
+  ValidationResult,
+} from "@rastaweb/nest-sentinel";
 
 @Injectable()
 export class BusinessHoursStrategy extends SentinelStrategy {
-  readonly name = 'business-hours';
+  readonly name = "business-hours";
 
   async validate(context: ValidationContext): Promise<ValidationResult> {
     const now = new Date();
@@ -392,12 +399,12 @@ export class BusinessHoursStrategy extends SentinelStrategy {
     if (!isBusinessDay || !isBusinessHour) {
       return {
         allowed: false,
-        reason: 'Access restricted to business hours (Mon-Fri, 9 AM - 5 PM)',
+        reason: "Access restricted to business hours (Mon-Fri, 9 AM - 5 PM)",
         metadata: {
           currentTime: now.toISOString(),
           businessDay: isBusinessDay,
-          businessHour: isBusinessHour
-        }
+          businessHour: isBusinessHour,
+        },
       };
     }
 
@@ -410,12 +417,12 @@ export class BusinessHoursStrategy extends SentinelStrategy {
 
 ```typescript
 // app.module.ts
-import { SentinelModule } from '@rastaweb/nest-sentinel';
+import { SentinelModule } from "@rastaweb/nest-sentinel";
 
 @Module({
   imports: [
     SentinelModule.withStrategies([BusinessHoursStrategy], {
-      defaultStrategy: 'business-hours'
+      defaultStrategy: "business-hours",
     }),
   ],
   providers: [BusinessHoursStrategy],
@@ -438,19 +445,18 @@ getBusinessOnlyData() {
 Implement custom storage backends by extending `SentinelStore`:
 
 ```typescript
-import { Injectable } from '@nestjs/common';
-import { SentinelStore } from '@rastaweb/nest-sentinel';
+import { Injectable } from "@nestjs/common";
+import { SentinelStore } from "@rastaweb/nest-sentinel";
 
 @Injectable()
 export class DatabaseSentinelStore extends SentinelStore {
-  
   constructor(private readonly database: DatabaseService) {
     super();
   }
 
   async isIPAllowed(ip: string): Promise<boolean> {
     const result = await this.database.query(
-      'SELECT COUNT(*) as count FROM allowed_ips WHERE ip = ? OR ? INET_ATON(ip) & INET_ATON(mask)',
+      "SELECT COUNT(*) as count FROM allowed_ips WHERE ip = ? OR ? INET_ATON(ip) & INET_ATON(mask)",
       [ip, ip]
     );
     return result[0].count > 0;
@@ -458,7 +464,7 @@ export class DatabaseSentinelStore extends SentinelStore {
 
   async isAPIKeyValid(key: string): Promise<boolean> {
     const result = await this.database.query(
-      'SELECT COUNT(*) as count FROM api_keys WHERE key_hash = SHA2(?, 256) AND active = 1',
+      "SELECT COUNT(*) as count FROM api_keys WHERE key_hash = SHA2(?, 256) AND active = 1",
       [key]
     );
     return result[0].count > 0;
@@ -466,7 +472,7 @@ export class DatabaseSentinelStore extends SentinelStore {
 
   async getAPIKeyMetadata(key: string): Promise<Record<string, any> | null> {
     const result = await this.database.query(
-      'SELECT * FROM api_keys WHERE key_hash = SHA2(?, 256) AND active = 1',
+      "SELECT * FROM api_keys WHERE key_hash = SHA2(?, 256) AND active = 1",
       [key]
     );
     return result[0] || null;
@@ -480,12 +486,12 @@ export class DatabaseSentinelStore extends SentinelStore {
 
 ```typescript
 // app.module.ts
-import { SentinelModule } from '@rastaweb/nest-sentinel';
+import { SentinelModule } from "@rastaweb/nest-sentinel";
 
 @Module({
   imports: [
     SentinelModule.withStore(DatabaseSentinelStore, {
-      defaultStrategy: 'default'
+      defaultStrategy: "default",
     }),
   ],
   providers: [DatabaseSentinelStore, DatabaseService],
@@ -513,6 +519,7 @@ Environment validation is automatic when `envValidation: true` (default).
 ### Interfaces
 
 #### SentinelConfig
+
 ```typescript
 interface SentinelConfig {
   enabled?: boolean;
@@ -525,6 +532,7 @@ interface SentinelConfig {
 ```
 
 #### ValidationContext
+
 ```typescript
 interface ValidationContext {
   clientIP: string;
@@ -538,6 +546,7 @@ interface ValidationContext {
 ```
 
 #### ValidationResult
+
 ```typescript
 interface ValidationResult {
   allowed: boolean;
@@ -549,6 +558,7 @@ interface ValidationResult {
 ### Utilities
 
 #### IPValidator
+
 ```typescript
 class IPValidator {
   static isValidIP(ip: string): boolean;
@@ -563,12 +573,20 @@ class IPValidator {
 ```
 
 #### APIKeyValidator
+
 ```typescript
 class APIKeyValidator {
-  static extractAPIKey(headers: Record<string, any>, query: Record<string, any>, options?: APIKeyOptions): string | null;
+  static extractAPIKey(
+    headers: Record<string, any>,
+    query: Record<string, any>,
+    options?: APIKeyOptions
+  ): string | null;
   static isValidFormat(apiKey: string): boolean;
   static isExpired(metadata: Record<string, any>): boolean;
-  static validateWithMetadata(apiKey: string, metadata: Record<string, any> | null): ValidationResult;
+  static validateWithMetadata(
+    apiKey: string,
+    metadata: Record<string, any> | null
+  ): ValidationResult;
 }
 ```
 
@@ -585,6 +603,7 @@ npm run start:dev
 ```
 
 The example includes:
+
 - Public endpoints (no validation)
 - Protected endpoints (various validation patterns)
 - Admin endpoints (strict validation)
@@ -594,15 +613,15 @@ The example includes:
 
 ### API Endpoints in Example
 
-| Endpoint | Description | Validation |
-|----------|-------------|------------|
-| `GET /public/info` | Public information | None (skipped) |
-| `GET /protected/basic` | Basic IP validation | IP whitelist |
-| `GET /protected/api-key` | API key only | API key required |
-| `GET /protected/combined` | Both validations | IP + API key |
-| `GET /admin/users` | Admin user list | Strict IP + admin key |
-| `GET /custom/premium` | Premium access | Custom strategy |
-| `GET /database/users` | Database validation | Database-backed |
+| Endpoint                  | Description         | Validation            |
+| ------------------------- | ------------------- | --------------------- |
+| `GET /public/info`        | Public information  | None (skipped)        |
+| `GET /protected/basic`    | Basic IP validation | IP whitelist          |
+| `GET /protected/api-key`  | API key only        | API key required      |
+| `GET /protected/combined` | Both validations    | IP + API key          |
+| `GET /admin/users`        | Admin user list     | Strict IP + admin key |
+| `GET /custom/premium`     | Premium access      | Custom strategy       |
+| `GET /database/users`     | Database validation | Database-backed       |
 
 ### Testing the Example
 
@@ -632,30 +651,33 @@ curl -H "x-admin-token: admin-key-456" http://localhost:3000/admin/users
 ### Upgrading
 
 1. Update package:
+
 ```bash
 npm install @rastaweb/nest-sentinel@latest
 ```
 
 2. Update imports:
+
 ```typescript
 // Old
-import { SentinelModule } from 'nest-sentinel';
+import { SentinelModule } from "nest-sentinel";
 
 // New
-import { SentinelModule } from '@rastaweb/nest-sentinel';
+import { SentinelModule } from "@rastaweb/nest-sentinel";
 ```
 
 3. Update configuration:
+
 ```typescript
 // Old
 SentinelModule.forRoot({
-  guards: { ip: true, apiKey: true }
+  guards: { ip: true, apiKey: true },
 });
 
 // New
 SentinelModule.forRoot({
-  defaultIPRules: { type: 'ip', allowPrivate: true },
-  defaultAPIKeyRules: { type: 'apiKey', required: true }
+  defaultIPRules: { type: "ip", allowPrivate: true },
+  defaultAPIKeyRules: { type: "apiKey", required: true },
 });
 ```
 
