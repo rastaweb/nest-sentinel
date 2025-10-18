@@ -5,7 +5,7 @@
  * with IP and API key restrictions.
  *
  * @author rastaweb
- * @version 1.0.0
+ * @version 1.2.3
  */
 
 // Core interfaces and types
