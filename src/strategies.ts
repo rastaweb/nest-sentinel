@@ -1,14 +1,18 @@
-import { Injectable } from '@nestjs/common';
-import { 
-  SentinelStrategy, 
-  SentinelStore, 
-  ValidationContext, 
+import { Injectable, Inject } from "@nestjs/common";
+import {
+  SentinelStrategy,
+  SentinelStore,
+  ValidationContext,
   ValidationResult,
   IPValidationRule,
-  APIKeyValidationRule
-} from './interfaces';
-import { IPValidator, APIKeyValidator } from './utils';
-import { DEFAULT_API_KEY_HEADER, ERROR_CODES } from './constants';
+  APIKeyValidationRule,
+} from "./interfaces";
+import { IPValidator, APIKeyValidator } from "./utils";
+import {
+  DEFAULT_API_KEY_HEADER,
+  ERROR_CODES,
+  SENTINEL_STORE_TOKEN,
+} from "./constants";
 
 /**
  * Default in-memory implementation of SentinelStore
@@ -54,10 +58,13 @@ export class InMemorySentinelStore extends SentinelStore {
   /**
    * Add an API key with metadata
    */
-  async addAPIKey(key: string, metadata: Record<string, any> = {}): Promise<void> {
+  async addAPIKey(
+    key: string,
+    metadata: Record<string, any> = {}
+  ): Promise<void> {
     this.apiKeys.set(key, {
       createdAt: new Date().toISOString(),
-      ...metadata
+      ...metadata,
     });
   }
 
@@ -71,7 +78,10 @@ export class InMemorySentinelStore extends SentinelStore {
   /**
    * Update API key metadata
    */
-  async updateAPIKeyMetadata(key: string, metadata: Record<string, any>): Promise<void> {
+  async updateAPIKeyMetadata(
+    key: string,
+    metadata: Record<string, any>
+  ): Promise<void> {
     const existing = this.apiKeys.get(key);
     if (existing) {
       this.apiKeys.set(key, { ...existing, ...metadata });
@@ -81,8 +91,13 @@ export class InMemorySentinelStore extends SentinelStore {
   /**
    * List all API keys
    */
-  async listAPIKeys(): Promise<Array<{ key: string; metadata: Record<string, any> }>> {
-    return Array.from(this.apiKeys.entries()).map(([key, metadata]) => ({ key, metadata }));
+  async listAPIKeys(): Promise<
+    Array<{ key: string; metadata: Record<string, any> }>
+  > {
+    return Array.from(this.apiKeys.entries()).map(([key, metadata]) => ({
+      key,
+      metadata,
+    }));
   }
 
   /**
@@ -100,9 +115,11 @@ export class InMemorySentinelStore extends SentinelStore {
  */
 @Injectable()
 export class DefaultSentinelStrategy extends SentinelStrategy {
-  readonly name = 'default';
+  readonly name = "default";
 
-  constructor(private readonly store: SentinelStore) {
+  constructor(
+    @Inject(SENTINEL_STORE_TOKEN) private readonly store: SentinelStore
+  ) {
     super();
   }
 
@@ -125,7 +142,10 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
 
       // Validate API key if configured
       if (routeOptions?.apiKey) {
-        const apiKeyResult = await this.validateAPIKey(apiKey, routeOptions.apiKey);
+        const apiKeyResult = await this.validateAPIKey(
+          apiKey,
+          routeOptions.apiKey
+        );
         if (!apiKeyResult.allowed) {
           return apiKeyResult;
         }
@@ -145,44 +165,49 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
     } catch (error) {
       return {
         allowed: false,
-        reason: `Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
+        reason: `Validation error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        metadata: {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
       };
     }
   }
 
-  private async validateIP(clientIP: string, ipConfig: any): Promise<ValidationResult> {
+  private async validateIP(
+    clientIP: string,
+    ipConfig: any
+  ): Promise<ValidationResult> {
     // Handle simple array format
     if (Array.isArray(ipConfig)) {
       const result = IPValidator.validateIP(clientIP, { whitelist: ipConfig });
       return {
         allowed: result.allowed,
         reason: result.reason,
-        metadata: { validationType: 'ip', clientIP }
+        metadata: { validationType: "ip", clientIP },
       };
     }
 
     // Handle detailed IP validation rule
-    if (typeof ipConfig === 'object' && ipConfig.type === 'ip') {
+    if (typeof ipConfig === "object" && ipConfig.type === "ip") {
       const rule = ipConfig as IPValidationRule;
-      
+
       // Check store-based validation first
       if (await this.store.isIPBlacklisted(clientIP)) {
         return {
           allowed: false,
-          reason: 'IP address is blacklisted in store',
-          metadata: { validationType: 'ip', clientIP }
+          reason: "IP address is blacklisted in store",
+          metadata: { validationType: "ip", clientIP },
         };
       }
 
       // If there's a whitelist in store, check it
       const isInStoreWhitelist = await this.store.isIPAllowed(clientIP);
-      
+
       const result = IPValidator.validateIP(clientIP, {
         whitelist: rule.whitelist,
         blacklist: rule.blacklist,
         allowPrivate: rule.allowPrivate,
-        allowLoopback: rule.allowLoopback
+        allowLoopback: rule.allowLoopback,
       });
 
       // If store whitelist exists and IP validation passes, ensure it's also in store
@@ -190,36 +215,39 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
         // Allow if IP matches rule whitelist, even if not in store
         return {
           allowed: true,
-          metadata: { validationType: 'ip', clientIP, source: 'rule' }
+          metadata: { validationType: "ip", clientIP, source: "rule" },
         };
       }
 
       return {
         allowed: result.allowed,
         reason: result.reason,
-        metadata: { validationType: 'ip', clientIP }
+        metadata: { validationType: "ip", clientIP },
       };
     }
 
     return { allowed: true };
   }
 
-  private async validateAPIKey(apiKey: string | undefined, apiKeyConfig: any): Promise<ValidationResult> {
+  private async validateAPIKey(
+    apiKey: string | undefined,
+    apiKeyConfig: any
+  ): Promise<ValidationResult> {
     // Handle boolean format
     if (apiKeyConfig === true) {
       if (!apiKey) {
         return {
           allowed: false,
-          reason: 'API key is required',
-          metadata: { validationType: 'apiKey' }
+          reason: "API key is required",
+          metadata: { validationType: "apiKey" },
         };
       }
 
       if (!APIKeyValidator.isValidFormat(apiKey)) {
         return {
           allowed: false,
-          reason: 'Invalid API key format',
-          metadata: { validationType: 'apiKey' }
+          reason: "Invalid API key format",
+          metadata: { validationType: "apiKey" },
         };
       }
 
@@ -228,31 +256,34 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
       if (!isValid) {
         return {
           allowed: false,
-          reason: 'Invalid API key',
-          metadata: { validationType: 'apiKey' }
+          reason: "Invalid API key",
+          metadata: { validationType: "apiKey" },
         };
       }
 
       // Check metadata
       const metadata = await this.store.getAPIKeyMetadata(apiKey);
-      const validationResult = APIKeyValidator.validateWithMetadata(apiKey, metadata);
-      
+      const validationResult = APIKeyValidator.validateWithMetadata(
+        apiKey,
+        metadata
+      );
+
       return {
         allowed: validationResult.valid,
         reason: validationResult.reason,
-        metadata: { validationType: 'apiKey', keyMetadata: metadata }
+        metadata: { validationType: "apiKey", keyMetadata: metadata },
       };
     }
 
     // Handle detailed API key validation rule
-    if (typeof apiKeyConfig === 'object' && apiKeyConfig.type === 'apiKey') {
+    if (typeof apiKeyConfig === "object" && apiKeyConfig.type === "apiKey") {
       const rule = apiKeyConfig as APIKeyValidationRule;
 
       if (rule.required && !apiKey) {
         return {
           allowed: false,
-          reason: 'API key is required',
-          metadata: { validationType: 'apiKey' }
+          reason: "API key is required",
+          metadata: { validationType: "apiKey" },
         };
       }
 
@@ -260,8 +291,8 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
         if (!APIKeyValidator.isValidFormat(apiKey)) {
           return {
             allowed: false,
-            reason: 'Invalid API key format',
-            metadata: { validationType: 'apiKey' }
+            reason: "Invalid API key format",
+            metadata: { validationType: "apiKey" },
           };
         }
 
@@ -270,18 +301,21 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
           if (!isValid) {
             return {
               allowed: false,
-              reason: 'Invalid API key',
-              metadata: { validationType: 'apiKey' }
+              reason: "Invalid API key",
+              metadata: { validationType: "apiKey" },
             };
           }
 
           const metadata = await this.store.getAPIKeyMetadata(apiKey);
-          const validationResult = APIKeyValidator.validateWithMetadata(apiKey, metadata);
-          
+          const validationResult = APIKeyValidator.validateWithMetadata(
+            apiKey,
+            metadata
+          );
+
           return {
             allowed: validationResult.valid,
             reason: validationResult.reason,
-            metadata: { validationType: 'apiKey', keyMetadata: metadata }
+            metadata: { validationType: "apiKey", keyMetadata: metadata },
           };
         }
       }
@@ -290,17 +324,20 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
     return { allowed: true };
   }
 
-  private async validateRule(context: ValidationContext, rule: any): Promise<ValidationResult> {
+  private async validateRule(
+    context: ValidationContext,
+    rule: any
+  ): Promise<ValidationResult> {
     switch (rule.type) {
-      case 'ip':
+      case "ip":
         return this.validateIP(context.clientIP, rule);
-      case 'apiKey':
+      case "apiKey":
         return this.validateAPIKey(context.apiKey, rule);
       default:
         return {
           allowed: false,
           reason: `Unknown rule type: ${rule.type}`,
-          metadata: { validationType: 'custom', ruleType: rule.type }
+          metadata: { validationType: "custom", ruleType: rule.type },
         };
     }
   }
@@ -311,12 +348,15 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
  */
 @Injectable()
 export class AllowAllStrategy extends SentinelStrategy {
-  readonly name = 'allow-all';
+  readonly name = "allow-all";
 
   validate(): ValidationResult {
-    return { 
-      allowed: true, 
-      metadata: { strategy: 'allow-all', warning: 'This strategy allows all requests' }
+    return {
+      allowed: true,
+      metadata: {
+        strategy: "allow-all",
+        warning: "This strategy allows all requests",
+      },
     };
   }
 }
@@ -326,13 +366,13 @@ export class AllowAllStrategy extends SentinelStrategy {
  */
 @Injectable()
 export class DenyAllStrategy extends SentinelStrategy {
-  readonly name = 'deny-all';
+  readonly name = "deny-all";
 
   validate(): ValidationResult {
-    return { 
-      allowed: false, 
-      reason: 'Access denied by deny-all strategy',
-      metadata: { strategy: 'deny-all' }
+    return {
+      allowed: false,
+      reason: "Access denied by deny-all strategy",
+      metadata: { strategy: "deny-all" },
     };
   }
 }
@@ -342,7 +382,7 @@ export class DenyAllStrategy extends SentinelStrategy {
  */
 @Injectable()
 export class IPOnlyStrategy extends SentinelStrategy {
-  readonly name = 'ip-only';
+  readonly name = "ip-only";
 
   constructor(private readonly store: SentinelStore) {
     super();
@@ -359,8 +399,8 @@ export class IPOnlyStrategy extends SentinelStrategy {
     if (await this.store.isIPBlacklisted(clientIP)) {
       return {
         allowed: false,
-        reason: 'IP address is blacklisted',
-        metadata: { strategy: 'ip-only', clientIP }
+        reason: "IP address is blacklisted",
+        metadata: { strategy: "ip-only", clientIP },
       };
     }
 
@@ -373,8 +413,8 @@ export class IPOnlyStrategy extends SentinelStrategy {
     const isAllowed = await this.store.isIPAllowed(clientIP);
     return {
       allowed: isAllowed,
-      reason: isAllowed ? undefined : 'IP address not in whitelist',
-      metadata: { strategy: 'ip-only', clientIP }
+      reason: isAllowed ? undefined : "IP address not in whitelist",
+      metadata: { strategy: "ip-only", clientIP },
     };
   }
 
@@ -384,20 +424,20 @@ export class IPOnlyStrategy extends SentinelStrategy {
       return {
         allowed: result.allowed,
         reason: result.reason,
-        metadata: { strategy: 'ip-only', clientIP }
+        metadata: { strategy: "ip-only", clientIP },
       };
     }
 
-    if (typeof ipConfig === 'object' && ipConfig.type === 'ip') {
+    if (typeof ipConfig === "object" && ipConfig.type === "ip") {
       const result = IPValidator.validateIP(clientIP, ipConfig);
       return {
         allowed: result.allowed,
         reason: result.reason,
-        metadata: { strategy: 'ip-only', clientIP }
+        metadata: { strategy: "ip-only", clientIP },
       };
     }
 
-    return { allowed: true, metadata: { strategy: 'ip-only', clientIP } };
+    return { allowed: true, metadata: { strategy: "ip-only", clientIP } };
   }
 }
 

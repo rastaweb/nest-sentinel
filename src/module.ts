@@ -1,32 +1,27 @@
-import { 
-  Module, 
-  DynamicModule, 
-  Provider, 
-  Global 
-} from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { Module, DynamicModule, Provider, Global } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import {
   SentinelConfig,
   SentinelAsyncOptions,
   SentinelOptionsFactory,
   SentinelStore,
-  SentinelStrategy
-} from './interfaces';
+  SentinelStrategy,
+} from "./interfaces";
 import {
   SENTINEL_CONFIG_TOKEN,
   SENTINEL_STORE_TOKEN,
-  SENTINEL_STRATEGIES_TOKEN
-} from './constants';
-import { SentinelGuard } from './guard';
-import { 
+  SENTINEL_STRATEGIES_TOKEN,
+} from "./constants";
+import { SentinelGuard } from "./guard";
+import {
   InMemorySentinelStore,
   DefaultSentinelStrategy,
   AllowAllStrategy,
   DenyAllStrategy,
   IPOnlyStrategy,
-  StrategyRegistry
-} from './strategies';
-import { validateEnvironment } from './utils';
+  StrategyRegistry,
+} from "./strategies";
+import { validateEnvironment } from "./utils";
 
 /**
  * Core Sentinel Module
@@ -42,15 +37,15 @@ export class SentinelModule {
       provide: SENTINEL_CONFIG_TOKEN,
       useValue: {
         enabled: true,
-        defaultStrategy: 'default',
+        defaultStrategy: "default",
         envValidation: true,
-        ...config
-      }
+        ...config,
+      },
     };
 
     const storeProvider: Provider = {
       provide: SENTINEL_STORE_TOKEN,
-      useClass: InMemorySentinelStore
+      useClass: InMemorySentinelStore,
     };
 
     return {
@@ -59,14 +54,14 @@ export class SentinelModule {
         configProvider,
         storeProvider,
         ...this.createStrategyProviders(),
-        ...this.createCoreProviders(true)
+        ...this.createCoreProviders(true),
       ],
       exports: [
         SENTINEL_CONFIG_TOKEN,
         SENTINEL_STORE_TOKEN,
         StrategyRegistry,
-        SentinelGuard
-      ]
+        SentinelGuard,
+      ],
     };
   }
 
@@ -75,10 +70,10 @@ export class SentinelModule {
    */
   static forRootAsync(options: SentinelAsyncOptions): DynamicModule {
     const configProvider = this.createAsyncConfigProvider(options);
-    
+
     const storeProvider: Provider = {
       provide: SENTINEL_STORE_TOKEN,
-      useClass: InMemorySentinelStore
+      useClass: InMemorySentinelStore,
     };
 
     return {
@@ -89,14 +84,14 @@ export class SentinelModule {
         storeProvider,
         ...this.createStrategyProviders(),
         ...this.createCoreProviders(true),
-        ...(options.useClass ? [options.useClass] : [])
+        ...(options.useClass ? [options.useClass] : []),
       ],
       exports: [
         SENTINEL_CONFIG_TOKEN,
         SENTINEL_STORE_TOKEN,
         StrategyRegistry,
-        SentinelGuard
-      ]
+        SentinelGuard,
+      ],
     };
   }
 
@@ -108,14 +103,14 @@ export class SentinelModule {
       provide: SENTINEL_CONFIG_TOKEN,
       useValue: {
         enabled: true,
-        defaultStrategy: 'default',
-        ...config
-      }
+        defaultStrategy: "default",
+        ...config,
+      },
     };
 
     const storeProvider: Provider = {
       provide: SENTINEL_STORE_TOKEN,
-      useClass: InMemorySentinelStore
+      useClass: InMemorySentinelStore,
     };
 
     return {
@@ -124,14 +119,14 @@ export class SentinelModule {
         configProvider,
         storeProvider,
         ...this.createStrategyProviders(),
-        ...this.createCoreProviders(false)
+        ...this.createCoreProviders(false),
       ],
       exports: [
         SENTINEL_CONFIG_TOKEN,
         SENTINEL_STORE_TOKEN,
         StrategyRegistry,
-        SentinelGuard
-      ]
+        SentinelGuard,
+      ],
     };
   }
 
@@ -146,14 +141,14 @@ export class SentinelModule {
       provide: SENTINEL_CONFIG_TOKEN,
       useValue: {
         enabled: true,
-        defaultStrategy: 'default',
-        ...config
-      }
+        defaultStrategy: "default",
+        ...config,
+      },
     };
 
     const storeProvider: Provider = {
       provide: SENTINEL_STORE_TOKEN,
-      useClass: storeClass
+      useClass: storeClass,
     };
 
     return {
@@ -162,14 +157,14 @@ export class SentinelModule {
         configProvider,
         storeProvider,
         ...this.createStrategyProviders(),
-        ...this.createCoreProviders(true)
+        ...this.createCoreProviders(true),
       ],
       exports: [
         SENTINEL_CONFIG_TOKEN,
         SENTINEL_STORE_TOKEN,
         StrategyRegistry,
-        SentinelGuard
-      ]
+        SentinelGuard,
+      ],
     };
   }
 
@@ -184,19 +179,19 @@ export class SentinelModule {
       provide: SENTINEL_CONFIG_TOKEN,
       useValue: {
         enabled: true,
-        defaultStrategy: 'default',
-        ...config
-      }
+        defaultStrategy: "default",
+        ...config,
+      },
     };
 
     const storeProvider: Provider = {
       provide: SENTINEL_STORE_TOKEN,
-      useClass: InMemorySentinelStore
+      useClass: InMemorySentinelStore,
     };
 
-    const customStrategyProviders = strategies.map(StrategyClass => ({
+    const customStrategyProviders = strategies.map((StrategyClass) => ({
       provide: StrategyClass,
-      useClass: StrategyClass
+      useClass: StrategyClass,
     }));
 
     return {
@@ -206,22 +201,24 @@ export class SentinelModule {
         storeProvider,
         ...this.createStrategyProviders(),
         ...customStrategyProviders,
-        ...this.createCoreProviders(true)
+        ...this.createCoreProviders(true),
       ],
       exports: [
         SENTINEL_CONFIG_TOKEN,
         SENTINEL_STORE_TOKEN,
         StrategyRegistry,
         SentinelGuard,
-        ...strategies
-      ]
+        ...strategies,
+      ],
     };
   }
 
   /**
    * Create async configuration provider
    */
-  private static createAsyncConfigProvider(options: SentinelAsyncOptions): Provider {
+  private static createAsyncConfigProvider(
+    options: SentinelAsyncOptions
+  ): Provider {
     if (options.useFactory) {
       return {
         provide: SENTINEL_CONFIG_TOKEN,
@@ -229,12 +226,12 @@ export class SentinelModule {
           const config = await options.useFactory!(...args);
           return {
             enabled: true,
-            defaultStrategy: 'default',
+            defaultStrategy: "default",
             envValidation: true,
-            ...config
+            ...config,
           };
         },
-        inject: options.inject || []
+        inject: options.inject || [],
       };
     }
 
@@ -245,12 +242,12 @@ export class SentinelModule {
           const config = await factory.createSentinelOptions();
           return {
             enabled: true,
-            defaultStrategy: 'default',
+            defaultStrategy: "default",
             envValidation: true,
-            ...config
+            ...config,
           };
         },
-        inject: [options.useClass]
+        inject: [options.useClass],
       };
     }
 
@@ -261,16 +258,16 @@ export class SentinelModule {
           const config = await factory.createSentinelOptions();
           return {
             enabled: true,
-            defaultStrategy: 'default',
+            defaultStrategy: "default",
             envValidation: true,
-            ...config
+            ...config,
           };
         },
-        inject: [options.useExisting]
+        inject: [options.useExisting],
       };
     }
 
-    throw new Error('Invalid async configuration options');
+    throw new Error("Invalid async configuration options");
   }
 
   /**
@@ -278,22 +275,27 @@ export class SentinelModule {
    */
   private static createStrategyProviders(): Provider[] {
     return [
+      // Provide the default store implementation
+      {
+        provide: SENTINEL_STORE_TOKEN,
+        useClass: InMemorySentinelStore,
+      },
       {
         provide: DefaultSentinelStrategy,
-        useClass: DefaultSentinelStrategy
+        useClass: DefaultSentinelStrategy,
       },
       {
         provide: AllowAllStrategy,
-        useClass: AllowAllStrategy
+        useClass: AllowAllStrategy,
       },
       {
         provide: DenyAllStrategy,
-        useClass: DenyAllStrategy
+        useClass: DenyAllStrategy,
       },
       {
         provide: IPOnlyStrategy,
-        useClass: IPOnlyStrategy
-      }
+        useClass: IPOnlyStrategy,
+      },
     ];
   }
 
@@ -311,33 +313,33 @@ export class SentinelModule {
           ipOnlyStrategy: IPOnlyStrategy
         ) => {
           const registry = new StrategyRegistry();
-          
+
           // Register default strategies
           registry.register(defaultStrategy);
           registry.register(allowAllStrategy);
           registry.register(denyAllStrategy);
           registry.register(ipOnlyStrategy);
-          
+
           return registry;
         },
         inject: [
           DefaultSentinelStrategy,
           AllowAllStrategy,
           DenyAllStrategy,
-          IPOnlyStrategy
-        ]
+          IPOnlyStrategy,
+        ],
       },
       {
         provide: SentinelGuard,
-        useClass: SentinelGuard
-      }
+        useClass: SentinelGuard,
+      },
     ];
 
     // Add global guard if requested
     if (useGlobalGuard) {
       providers.push({
         provide: APP_GUARD,
-        useExisting: SentinelGuard
+        useExisting: SentinelGuard,
       });
     }
 
@@ -360,12 +362,14 @@ export class SentinelModule {
 /**
  * Utility function to create a minimal configuration
  */
-export function createSentinelConfig(overrides: Partial<SentinelConfig> = {}): SentinelConfig {
+export function createSentinelConfig(
+  overrides: Partial<SentinelConfig> = {}
+): SentinelConfig {
   return {
     enabled: true,
-    defaultStrategy: 'default',
+    defaultStrategy: "default",
     envValidation: true,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -375,29 +379,31 @@ export function createSentinelConfig(overrides: Partial<SentinelConfig> = {}): S
 export function createTestConfig(): SentinelConfig {
   return {
     enabled: true,
-    defaultStrategy: 'allow-all',
-    envValidation: false
+    defaultStrategy: "allow-all",
+    envValidation: false,
   };
 }
 
 /**
  * Factory for creating production configurations
  */
-export function createProductionConfig(overrides: Partial<SentinelConfig> = {}): SentinelConfig {
+export function createProductionConfig(
+  overrides: Partial<SentinelConfig> = {}
+): SentinelConfig {
   return {
     enabled: true,
-    defaultStrategy: 'default',
+    defaultStrategy: "default",
     envValidation: true,
     defaultIPRules: {
-      type: 'ip',
+      type: "ip",
       allowPrivate: false,
-      allowLoopback: false
+      allowLoopback: false,
     },
     defaultAPIKeyRules: {
-      type: 'apiKey',
+      type: "apiKey",
       required: true,
-      validateKey: true
+      validateKey: true,
     },
-    ...overrides
+    ...overrides,
   };
 }
