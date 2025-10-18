@@ -559,7 +559,7 @@ Handle breaking changes:
 // version-compatibility.service.ts
 @Injectable()
 export class VersionCompatibilityService {
-  private readonly version = "1.2.0";
+  private readonly version = "1.2.1";
 
   async checkCompatibility(): Promise<boolean> {
     // Check database schema version

@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name("sentinel")
   .description("NestJS Sentinel CLI for API key and database management")
-  .version("1.2.0");
+  .version("1.2.1");
 
 // Initialize database command
 program
