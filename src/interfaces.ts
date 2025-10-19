@@ -1,4 +1,4 @@
-import { ModuleMetadata, Type } from '@nestjs/common';
+import { ModuleMetadata, Type } from "@nestjs/common";
 
 /**
  * Represents IP address validation types
@@ -10,7 +10,7 @@ export type IPRange = string; // CIDR notation like "192.168.0.0/24"
  * Validation rule types
  */
 export interface IPValidationRule {
-  type: 'ip';
+  type: "ip";
   whitelist?: (IPAddress | IPRange)[];
   blacklist?: (IPAddress | IPRange)[];
   allowPrivate?: boolean;
@@ -18,11 +18,25 @@ export interface IPValidationRule {
 }
 
 export interface APIKeyValidationRule {
-  type: 'apiKey';
+  type: "apiKey";
   header?: string; // default: 'x-api-key'
   query?: string; // query parameter name
   required?: boolean;
   validateKey?: boolean; // whether to validate key exists in store
+  /** Strategy for validating API keys - 'store' | 'function' | 'static' */
+  validationStrategy?: "store" | "function" | "static";
+  /** For 'function' strategy: custom validation function */
+  validationFunction?: (apiKey: string) => boolean | Promise<boolean>;
+  /** For 'static' strategy: array of valid API keys */
+  validKeys?: string[];
+  /** Additional validation options */
+  validationOptions?: {
+    caseSensitive?: boolean;
+    allowPartialMatch?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: RegExp;
+  };
 }
 
 export type ValidationRule = IPValidationRule | APIKeyValidationRule;
@@ -59,6 +73,20 @@ export interface SentinelConfig {
   defaultStrategy?: string;
   /** Environment validation schema */
   envValidation?: boolean;
+  /** Global API key validation strategy */
+  apiKeyValidationStrategy?: "store" | "function" | "static";
+  /** Global API key validation function (when strategy is 'function') */
+  globalApiKeyValidation?: (apiKey: string) => boolean | Promise<boolean>;
+  /** Global valid API keys (when strategy is 'static') */
+  globalValidApiKeys?: string[];
+  /** Global API key validation options */
+  globalApiKeyOptions?: {
+    caseSensitive?: boolean;
+    allowPartialMatch?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: RegExp;
+  };
 }
 
 /**
@@ -95,6 +123,7 @@ export interface ValidationResult {
 
 /**
  * Abstract store interface for persistent data
+ * Note: This store is now focused on validation only, not key generation/management
  */
 export abstract class SentinelStore {
   /**
@@ -103,14 +132,16 @@ export abstract class SentinelStore {
   abstract isIPAllowed(ip: string): Promise<boolean> | boolean;
 
   /**
-   * Check if an API key is valid
+   * Check if an API key is valid (for 'store' validation strategy)
    */
   abstract isAPIKeyValid(key: string): Promise<boolean> | boolean;
 
   /**
-   * Get API key metadata (expiration, permissions, etc.)
+   * Get API key metadata (expiration, permissions, etc.) - optional for validation
    */
-  abstract getAPIKeyMetadata(key: string): Promise<Record<string, any> | null> | Record<string, any> | null;
+  abstract getAPIKeyMetadata(
+    key: string
+  ): Promise<Record<string, any> | null> | Record<string, any> | null;
 
   /**
    * Check if an IP is blacklisted
@@ -118,22 +149,22 @@ export abstract class SentinelStore {
   abstract isIPBlacklisted(ip: string): Promise<boolean> | boolean;
 
   /**
-   * Add IP to whitelist
+   * Add IP to whitelist (for IP management)
    */
   abstract addIPToWhitelist(ip: string): Promise<void> | void;
 
   /**
-   * Add IP to blacklist
+   * Add IP to blacklist (for IP management)
    */
   abstract addIPToBlacklist(ip: string): Promise<void> | void;
 
   /**
-   * Remove IP from whitelist
+   * Remove IP from whitelist (for IP management)
    */
   abstract removeIPFromWhitelist(ip: string): Promise<void> | void;
 
   /**
-   * Remove IP from blacklist
+   * Remove IP from blacklist (for IP management)
    */
   abstract removeIPFromBlacklist(ip: string): Promise<void> | void;
 }
@@ -150,7 +181,9 @@ export abstract class SentinelStrategy {
   /**
    * Validate access based on context
    */
-  abstract validate(context: ValidationContext): Promise<ValidationResult> | ValidationResult;
+  abstract validate(
+    context: ValidationContext
+  ): Promise<ValidationResult> | ValidationResult;
 
   /**
    * Optional setup hook called when strategy is registered
@@ -173,7 +206,7 @@ export interface SentinelStrategyFactory {
 /**
  * Async options for module configuration
  */
-export interface SentinelAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
+export interface SentinelAsyncOptions extends Pick<ModuleMetadata, "imports"> {
   useExisting?: Type<SentinelOptionsFactory>;
   useClass?: Type<SentinelOptionsFactory>;
   useFactory?: (...args: any[]) => Promise<SentinelConfig> | SentinelConfig;
@@ -191,22 +224,109 @@ export interface SentinelOptionsFactory {
  * Error types
  */
 export class SentinelError extends Error {
-  constructor(message: string, public readonly code: string) {
+  constructor(
+    message: string,
+    public readonly code: string
+  ) {
     super(message);
-    this.name = 'SentinelError';
+    this.name = "SentinelError";
   }
 }
 
 export class IPValidationError extends SentinelError {
-  constructor(message: string, public readonly ip: string) {
-    super(message, 'IP_VALIDATION_ERROR');
-    this.name = 'IPValidationError';
+  constructor(
+    message: string,
+    public readonly ip: string
+  ) {
+    super(message, "IP_VALIDATION_ERROR");
+    this.name = "IPValidationError";
   }
 }
 
 export class APIKeyValidationError extends SentinelError {
   constructor(message: string) {
-    super(message, 'API_KEY_VALIDATION_ERROR');
-    this.name = 'APIKeyValidationError';
+    super(message, "API_KEY_VALIDATION_ERROR");
+    this.name = "APIKeyValidationError";
+  }
+}
+
+export class JWTValidationError extends SentinelError {
+  constructor(
+    message: string,
+    public readonly token?: string
+  ) {
+    super(message, "JWT_VALIDATION_ERROR");
+    this.name = "JWTValidationError";
+  }
+}
+
+/**
+ * API Key validation strategies
+ */
+export interface APIKeyValidationStrategy {
+  name: string;
+  validate(apiKey: string, options?: any): Promise<boolean> | boolean;
+}
+
+/**
+ * Built-in static API key validation strategy
+ */
+export class StaticAPIKeyStrategy implements APIKeyValidationStrategy {
+  readonly name = "static";
+
+  constructor(
+    private validKeys: string[],
+    private options?: {
+      caseSensitive?: boolean;
+      allowPartialMatch?: boolean;
+    }
+  ) {}
+
+  validate(apiKey: string): boolean {
+    const { caseSensitive = true, allowPartialMatch = false } =
+      this.options || {};
+
+    if (allowPartialMatch) {
+      return this.validKeys.some((validKey) => {
+        const key1 = caseSensitive ? apiKey : apiKey.toLowerCase();
+        const key2 = caseSensitive ? validKey : validKey.toLowerCase();
+        return key1.includes(key2) || key2.includes(key1);
+      });
+    }
+
+    return this.validKeys.some((validKey) => {
+      const key1 = caseSensitive ? apiKey : apiKey.toLowerCase();
+      const key2 = caseSensitive ? validKey : validKey.toLowerCase();
+      return key1 === key2;
+    });
+  }
+}
+
+/**
+ * Function-based API key validation strategy
+ */
+export class FunctionAPIKeyStrategy implements APIKeyValidationStrategy {
+  readonly name = "function";
+
+  constructor(
+    private validationFunction: (apiKey: string) => boolean | Promise<boolean>
+  ) {}
+
+  async validate(apiKey: string): Promise<boolean> {
+    const result = this.validationFunction(apiKey);
+    return result instanceof Promise ? await result : result;
+  }
+}
+
+/**
+ * Store-based API key validation strategy (legacy/existing behavior)
+ */
+export class StoreAPIKeyStrategy implements APIKeyValidationStrategy {
+  readonly name = "store";
+
+  constructor(private store: SentinelStore) {}
+
+  async validate(apiKey: string): Promise<boolean> {
+    return await this.store.isAPIKeyValid(apiKey);
   }
 }

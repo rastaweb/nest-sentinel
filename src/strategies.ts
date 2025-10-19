@@ -6,22 +6,29 @@ import {
   ValidationResult,
   IPValidationRule,
   APIKeyValidationRule,
+  SentinelConfig,
+  APIKeyValidationStrategy,
+  StaticAPIKeyStrategy,
+  FunctionAPIKeyStrategy,
+  StoreAPIKeyStrategy,
 } from "./interfaces";
 import { IPValidator, APIKeyValidator } from "./utils";
 import {
   DEFAULT_API_KEY_HEADER,
   ERROR_CODES,
   SENTINEL_STORE_TOKEN,
+  SENTINEL_CONFIG_TOKEN,
 } from "./constants";
 
 /**
  * Default in-memory implementation of SentinelStore
+ * Note: This store is now focused on validation only, not key generation/management
  */
 @Injectable()
 export class InMemorySentinelStore extends SentinelStore {
   private whitelistedIPs = new Set<string>();
   private blacklistedIPs = new Set<string>();
-  private apiKeys = new Map<string, Record<string, any>>();
+  private validApiKeys = new Set<string>(); // Simplified to just track valid keys
 
   async isIPAllowed(ip: string): Promise<boolean> {
     return this.whitelistedIPs.has(ip);
@@ -32,11 +39,19 @@ export class InMemorySentinelStore extends SentinelStore {
   }
 
   async isAPIKeyValid(key: string): Promise<boolean> {
-    return this.apiKeys.has(key);
+    return this.validApiKeys.has(key);
   }
 
   async getAPIKeyMetadata(key: string): Promise<Record<string, any> | null> {
-    return this.apiKeys.get(key) || null;
+    // Simple implementation - just returns basic info if key is valid
+    if (this.validApiKeys.has(key)) {
+      return {
+        key,
+        valid: true,
+        validatedAt: new Date().toISOString(),
+      };
+    }
+    return null;
   }
 
   async addIPToWhitelist(ip: string): Promise<void> {
@@ -56,48 +71,24 @@ export class InMemorySentinelStore extends SentinelStore {
   }
 
   /**
-   * Add an API key with metadata
+   * Add a pre-validated API key to the store (validation only, not generation)
    */
-  async addAPIKey(
-    key: string,
-    metadata: Record<string, any> = {}
-  ): Promise<void> {
-    this.apiKeys.set(key, {
-      createdAt: new Date().toISOString(),
-      ...metadata,
-    });
+  async addValidAPIKey(key: string): Promise<void> {
+    this.validApiKeys.add(key);
   }
 
   /**
-   * Remove an API key
+   * Remove an API key from valid keys
    */
-  async removeAPIKey(key: string): Promise<void> {
-    this.apiKeys.delete(key);
+  async removeValidAPIKey(key: string): Promise<void> {
+    this.validApiKeys.delete(key);
   }
 
   /**
-   * Update API key metadata
+   * List all valid API keys (for management purposes)
    */
-  async updateAPIKeyMetadata(
-    key: string,
-    metadata: Record<string, any>
-  ): Promise<void> {
-    const existing = this.apiKeys.get(key);
-    if (existing) {
-      this.apiKeys.set(key, { ...existing, ...metadata });
-    }
-  }
-
-  /**
-   * List all API keys
-   */
-  async listAPIKeys(): Promise<
-    Array<{ key: string; metadata: Record<string, any> }>
-  > {
-    return Array.from(this.apiKeys.entries()).map(([key, metadata]) => ({
-      key,
-      metadata,
-    }));
+  async listValidAPIKeys(): Promise<string[]> {
+    return Array.from(this.validApiKeys);
   }
 
   /**
@@ -106,19 +97,20 @@ export class InMemorySentinelStore extends SentinelStore {
   async clear(): Promise<void> {
     this.whitelistedIPs.clear();
     this.blacklistedIPs.clear();
-    this.apiKeys.clear();
+    this.validApiKeys.clear();
   }
 }
 
 /**
- * Default strategy implementation
+ * Default strategy implementation with enhanced API key validation
  */
 @Injectable()
 export class DefaultSentinelStrategy extends SentinelStrategy {
   readonly name = "default";
 
   constructor(
-    @Inject(SENTINEL_STORE_TOKEN) private readonly store: SentinelStore
+    @Inject(SENTINEL_STORE_TOKEN) private readonly store: SentinelStore,
+    @Inject(SENTINEL_CONFIG_TOKEN) private readonly config: SentinelConfig
   ) {
     super();
   }
@@ -233,7 +225,7 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
     apiKey: string | undefined,
     apiKeyConfig: any
   ): Promise<ValidationResult> {
-    // Handle boolean format
+    // Handle boolean format (use global configuration)
     if (apiKeyConfig === true) {
       if (!apiKey) {
         return {
@@ -243,36 +235,13 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
         };
       }
 
-      if (!APIKeyValidator.isValidFormat(apiKey)) {
-        return {
-          allowed: false,
-          reason: "Invalid API key format",
-          metadata: { validationType: "apiKey" },
-        };
-      }
-
-      // Check if key exists in store
-      const isValid = await this.store.isAPIKeyValid(apiKey);
-      if (!isValid) {
-        return {
-          allowed: false,
-          reason: "Invalid API key",
-          metadata: { validationType: "apiKey" },
-        };
-      }
-
-      // Check metadata
-      const metadata = await this.store.getAPIKeyMetadata(apiKey);
-      const validationResult = APIKeyValidator.validateWithMetadata(
-        apiKey,
-        metadata
-      );
-
-      return {
-        allowed: validationResult.valid,
-        reason: validationResult.reason,
-        metadata: { validationType: "apiKey", keyMetadata: metadata },
-      };
+      // Use the new validation strategy approach
+      return await this.validateAPIKeyWithStrategy(apiKey, {
+        validationStrategy: this.config.apiKeyValidationStrategy || "store",
+        validationFunction: this.config.globalApiKeyValidation,
+        validKeys: this.config.globalValidApiKeys,
+        validationOptions: this.config.globalApiKeyOptions,
+      });
     }
 
     // Handle detailed API key validation rule
@@ -288,7 +257,34 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
       }
 
       if (apiKey) {
-        if (!APIKeyValidator.isValidFormat(apiKey)) {
+        // Validate format if options are provided
+        if (rule.validationOptions) {
+          const { minLength, maxLength, pattern } = rule.validationOptions;
+
+          if (minLength && apiKey.length < minLength) {
+            return {
+              allowed: false,
+              reason: `API key too short (minimum ${minLength} characters)`,
+              metadata: { validationType: "apiKey" },
+            };
+          }
+
+          if (maxLength && apiKey.length > maxLength) {
+            return {
+              allowed: false,
+              reason: `API key too long (maximum ${maxLength} characters)`,
+              metadata: { validationType: "apiKey" },
+            };
+          }
+
+          if (pattern && !pattern.test(apiKey)) {
+            return {
+              allowed: false,
+              reason: "API key format does not match required pattern",
+              metadata: { validationType: "apiKey" },
+            };
+          }
+        } else if (!APIKeyValidator.isValidFormat(apiKey)) {
           return {
             allowed: false,
             reason: "Invalid API key format",
@@ -296,32 +292,132 @@ export class DefaultSentinelStrategy extends SentinelStrategy {
           };
         }
 
-        if (rule.validateKey) {
-          const isValid = await this.store.isAPIKeyValid(apiKey);
-          if (!isValid) {
-            return {
-              allowed: false,
-              reason: "Invalid API key",
-              metadata: { validationType: "apiKey" },
-            };
-          }
-
-          const metadata = await this.store.getAPIKeyMetadata(apiKey);
-          const validationResult = APIKeyValidator.validateWithMetadata(
-            apiKey,
-            metadata
-          );
-
-          return {
-            allowed: validationResult.valid,
-            reason: validationResult.reason,
-            metadata: { validationType: "apiKey", keyMetadata: metadata },
-          };
-        }
+        // Use the validation strategy from rule or global config
+        return await this.validateAPIKeyWithStrategy(apiKey, {
+          validationStrategy:
+            rule.validationStrategy ||
+            this.config.apiKeyValidationStrategy ||
+            "store",
+          validationFunction:
+            rule.validationFunction || this.config.globalApiKeyValidation,
+          validKeys: rule.validKeys || this.config.globalValidApiKeys,
+          validationOptions:
+            rule.validationOptions || this.config.globalApiKeyOptions,
+          validateKey: rule.validateKey, // For backwards compatibility
+        });
       }
     }
 
     return { allowed: true };
+  }
+
+  /**
+   * Validate API key using the specified strategy
+   */
+  private async validateAPIKeyWithStrategy(
+    apiKey: string,
+    options: {
+      validationStrategy?: "store" | "function" | "static";
+      validationFunction?: (apiKey: string) => boolean | Promise<boolean>;
+      validKeys?: string[];
+      validationOptions?: {
+        caseSensitive?: boolean;
+        allowPartialMatch?: boolean;
+      };
+      validateKey?: boolean; // For backwards compatibility
+    }
+  ): Promise<ValidationResult> {
+    const {
+      validationStrategy = "store",
+      validationFunction,
+      validKeys,
+      validationOptions,
+      validateKey,
+    } = options;
+
+    let strategy: APIKeyValidationStrategy;
+
+    // Create the appropriate validation strategy
+    switch (validationStrategy) {
+      case "static":
+        if (!validKeys || validKeys.length === 0) {
+          return {
+            allowed: false,
+            reason: "No valid API keys configured for static validation",
+            metadata: { validationType: "apiKey", strategy: "static" },
+          };
+        }
+        strategy = new StaticAPIKeyStrategy(validKeys, validationOptions);
+        break;
+
+      case "function":
+        if (!validationFunction) {
+          return {
+            allowed: false,
+            reason:
+              "No validation function provided for function-based validation",
+            metadata: { validationType: "apiKey", strategy: "function" },
+          };
+        }
+        strategy = new FunctionAPIKeyStrategy(validationFunction);
+        break;
+
+      case "store":
+      default:
+        // For backwards compatibility, check validateKey flag
+        if (validateKey === false) {
+          // Skip store validation if explicitly disabled
+          return { allowed: true };
+        }
+        strategy = new StoreAPIKeyStrategy(this.store);
+        break;
+    }
+
+    try {
+      const isValid = await strategy.validate(apiKey);
+
+      if (!isValid) {
+        return {
+          allowed: false,
+          reason: "Invalid API key",
+          metadata: { validationType: "apiKey", strategy: validationStrategy },
+        };
+      }
+
+      // For store strategy, also check metadata if available
+      if (validationStrategy === "store") {
+        const metadata = await this.store.getAPIKeyMetadata(apiKey);
+        const validationResult = APIKeyValidator.validateWithMetadata(
+          apiKey,
+          metadata
+        );
+
+        return {
+          allowed: validationResult.valid,
+          reason: validationResult.reason,
+          metadata: {
+            validationType: "apiKey",
+            strategy: "store",
+            keyMetadata: metadata,
+          },
+        };
+      }
+
+      return {
+        allowed: true,
+        metadata: { validationType: "apiKey", strategy: validationStrategy },
+      };
+    } catch (error) {
+      return {
+        allowed: false,
+        reason: `API key validation error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        metadata: {
+          validationType: "apiKey",
+          strategy: validationStrategy,
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      };
+    }
   }
 
   private async validateRule(

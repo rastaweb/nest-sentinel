@@ -20,6 +20,10 @@ export type {
   IPValidationRule,
   APIKeyValidationRule,
   ValidationRule,
+  APIKeyValidationStrategy,
+  StaticAPIKeyStrategy,
+  FunctionAPIKeyStrategy,
+  StoreAPIKeyStrategy,
 } from "./interfaces";
 
 // Export the abstract SentinelStrategy class
