@@ -324,7 +324,7 @@ describe("DefaultSentinelStrategy", () => {
         routeOptions: {
           rules: [
             {
-              type: "apiKey",
+              type: "unknownRuleType" as any, // Intentionally testing unknown type
             },
           ],
         },
